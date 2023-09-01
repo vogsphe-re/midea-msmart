@@ -1,8 +1,6 @@
-# Python
 .venv/
-*.egg-info
-dist/
 __pycache__
-
-# VSCode
+dist/
+build
+*.egg-info
 *.vscode/
