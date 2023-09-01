@@ -16,6 +16,7 @@ concurrency:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: mill1000/msmart-ng
+  PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7
 
 jobs:
   build-and-push-image:
@@ -31,12 +32,6 @@ jobs:
           # History/tags required to generate version info
           fetch-depth: 0
 
-      - uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - uses: docker/metadata-action@v4
         id: meta
         with:
@@ -47,9 +42,20 @@ jobs:
             type=pep440,pattern={{version}}
             type=ref,event=pr
 
+      - uses: docker/setup-qemu-action@v2
+        with:
+          platforms: ${{ env.PLATFORMS }}
+
+      - uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: docker/build-push-action@v4
         with:
           context: .
+          platforms: ${{ env.PLATFORMS }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
