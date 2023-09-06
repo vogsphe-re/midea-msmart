@@ -12,4 +12,4 @@ FROM alpine:latest
 RUN apk add --update python3 py3-pip py3-pycryptodome
 COPY --from=build /msmart-build/dist/msmart_ng-*.whl /tmp
 RUN pip install /tmp/msmart_ng-*.whl
-ENTRYPOINT ["/usr/bin/midea-discover"]
+ENTRYPOINT ["/usr/bin/msmart-ng"]
