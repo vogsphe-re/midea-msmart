@@ -32,6 +32,7 @@ Repository = "https://github.com/mill1000/midea-msmart"
 Issues = "https://github.com/mill1000/midea-msmart/issues"
 
 [project.scripts]
-midea-discover = "msmart.cli:main"
+midea-discover = "msmart.cli:_legacy_main"
+msmart-ng = "msmart.cli:main"
 
 [tool.setuptools_scm]
