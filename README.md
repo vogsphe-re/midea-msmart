@@ -52,18 +52,37 @@ Some external dependencies have been replaced with standard Python modules.
 
 ## Installing
 Use pip, remove the old `msmart` package if necessary, and install this fork `msmart-ng`.
+
 ```shell
 pip uninstall msmart
 pip install msmart-ng
 ```
 
 ## Usage
-Discover all devices on the LAN with the `midea-discover` command.
+### CLI
+A simple command line interface is provided to discover and query devices. 
 
 ```shell
-$ midea-discover 
-INFO:msmart.cli:msmart version: 2023.9.0
-INFO:msmart.cli:Only supports AC devices. Only supports MSmartHome and 美的美居.
+$ msmart-ng --help
+usage: msmart-ng [-h] [-v] {discover,query} ...
+
+Command line utility for msmart-ng.
+
+options:
+  -h, --help        show this help message and exit
+  -v, --version     show program's version number and exit
+
+Command:
+  {discover,query}
+```
+
+Each subcommand has additional help available. e.g. `msmart-ng discover --help`
+
+#### Discover
+Discover all devices on the LAN with the `msmart-ng discover` subcommand. 
+
+```shell
+$ msmart-ng discover
 ...
 INFO:msmart.cli:Found 2 devices.
 INFO:msmart.cli:Found device:
@@ -71,44 +90,54 @@ INFO:msmart.cli:Found device:
 INFO:msmart.cli:Found device:
 {'ip': '10.100.1.239', 'port': 6444, 'id': 147334558165565, 'online': True, 'supported': True, 'type': <DeviceType.AIR_CONDITIONER: 172>, 'name': 'net_ac_63BA', 'sn': '000000P0000000Q1B88C29C963BA0000', 'key': '3a13f53f335042f9ae5fd266a6bd779459ed7ee7e09842f1a0e03c024890fc96', 'token': '56a72747cef14d55e17e69b46cd98deae80607e318a7b55cb86bb98974501034c657e39e4a4032e3c8cc9a3cab00fd3ec0bab4a816a57f68b8038977406b7431'}
 ```
+
 Check the output to ensure the type is 0xAC and the `supported` property is True.
 
 Save the device ID, IP address, and port. Version 3 devices will also require the `token` and `key` fields to control the device.
 
-#### Note: V1 Device Owners
+##### Note: V1 Device Owners
 Users with V1 devices will see the following error:
+
 ```
 ERROR:msmart.discover:V1 device not supported yet.
 ```
-I don't have any V1 devices to test with so please create an issue with the output of `midea-discover -d`.
 
-### Docker
-A docker image is available on ghcr.io at `ghcr.io/mill1000/msmart-ng`. The container should be run with `--network=host` to allow broadcast packets to reach devices on the local network. Additional arguments to the container are passed to the `midea-discover` command.
+I don't have any V1 devices to test with so please create an issue with the output of `msmart-ng discover --debug`.
+
+#### Query
+Query device state and capabilities with the `msmart-ng query` subcommand.
+
+**Note:** Version 3 devices need to specify either the `--auto` argument or the `--token` and `--key` arguments to make a connection.
 
 ```shell
-$ docker run --network=host ghcr.io/mill1000/msmart-ng:latest --help
-usage: midea-discover [-h] [-d] [-a ACCOUNT] [-p PASSWORD] [-i IP] [-c COUNT] [--china]
+$ msmart-ng query <HOST>
 
-Discover Midea devices and print device information.
-
-options:
-  -h, --help            show this help message and exit
-  -d, --debug           Enable debug logging. (default: False)
-  -a ACCOUNT, --account ACCOUNT
-                        MSmartHome or 美的美居 account username. (default: midea_is_best@outlook.com)
-  -p PASSWORD, --password PASSWORD
-                        MSmartHome or 美的美居 account password. (default: lovemidea4ever)
-  -i IP, --ip IP        IP address of a device. Useful if broadcasts don't work, or to query a single device. (default: None)
-  -c COUNT, --count COUNT
-                        Number of broadcast packets to send. (default: 3)
-  --china               Use China server. (default: False)
 ```
+
+Device capabilities can be queried with the `--capabilities` argument.
 
 ### Home Assistant
 Use [this fork](https://github.com/mill1000/midea-ac-py) of midea-ac-py to control devices from Home Assistant.
 
 ### Python
 See the included [example](example.py) for controlling devices from a script.
+
+## Docker
+A docker image is available on ghcr.io at `ghcr.io/mill1000/msmart-ng`. The container should be run with `--network=host` to allow broadcast packets to reach devices on the local network. Additional arguments to the container are passed to the `msmart-ng` CLI.
+
+```shell
+$ docker run --network=host ghcr.io/mill1000/msmart-ng:latest --help
+usage: msmart-ng [-h] [-v] {discover,query} ...
+
+Command line utility for msmart-ng.
+
+options:
+  -h, --help        show this help message and exit
+  -v, --version     show program's version number and exit
+
+Command:
+  {discover,query}
+```
 
 ## Gratitude
 This project is a fork of [mac-zhou/midea-msmart](https://github.com/mac-zhou/midea-msmart), and builds upon the work of
