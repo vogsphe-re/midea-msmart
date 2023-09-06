@@ -456,3 +456,7 @@ class AirConditioner(Device):
     @property
     def max_target_temperature(self) -> Optional[int]:
         return self._max_target_temperature
+
+    @property
+    def supports_display_control(self) -> Optional[bool]:
+        return self._supports_display_control
