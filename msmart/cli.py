@@ -17,8 +17,10 @@ async def _discover(args) -> None:
 
     devices = []
     if args.host is None:
+        _LOGGER.info("Discovering all devices on local network.")
         devices = await Discover.discover(account=args.account, password=args.password, discovery_packets=args.count)
     else:
+        _LOGGER.info("Discovering %s on local network.", args.host)
         dev = await Discover.discover_single(args.host, account=args.account, password=args.password, discovery_packets=args.count)
         if dev:
             devices.append(dev)
@@ -60,6 +62,11 @@ async def _query(args) -> None:
     if args.capabilities:
         _LOGGER.info("Querying device capabilities.")
         await device.get_capabilities()
+
+        if not device.online:
+            _LOGGER.error("Device is not online.")
+            exit(1)
+        
         # TODO method to get caps in string format
         _LOGGER.info("%s", str({
             "supported_modes": device.supported_operation_modes,
@@ -74,6 +81,11 @@ async def _query(args) -> None:
     else:
         _LOGGER.info("Querying device state.")
         await device.refresh()
+
+        if not device.online:
+            _LOGGER.error("Device is not online.")
+            exit(1)
+            
         _LOGGER.info("%s", device)
 
 
