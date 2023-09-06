@@ -6,6 +6,7 @@ from typing import NoReturn
 from msmart import __version__
 from msmart.const import OPEN_MIDEA_APP_ACCOUNT, OPEN_MIDEA_APP_PASSWORD
 from msmart.device import AirConditioner as AC
+from msmart.device import Device
 from msmart.discover import Discover
 
 _LOGGER = logging.getLogger(__name__)
@@ -26,9 +27,10 @@ async def _discover(args) -> None:
         _LOGGER.error("No devices found.")
         return
 
+    # Dump only basic device info from the base class
     _LOGGER.info("Found %d devices.", len(devices))
     for device in devices:
-        _LOGGER.info("Found device:\n%s", device)
+        _LOGGER.info("Found device:\n%s", super(Device, device))
 
 
 async def _query(args) -> None:
@@ -58,9 +60,20 @@ async def _query(args) -> None:
     if args.capabilities:
         _LOGGER.info("Querying device capabilities.")
         await device.get_capabilities()
+        # TODO method to get caps in string format
+        _LOGGER.info("%s", str({
+            "supported_modes": device.supported_operation_modes,
+            "supported_swing_modes": device.supported_swing_modes,
+            "supports_eco_mode": device.supports_eco_mode,
+            "supports_turbo_mode": device.supports_turbo_mode,
+            "supports_freeze_protection_mode": device.supports_freeze_protection_mode,
+            "max_target_temperature": device.max_target_temperature,
+            "min_target_temperature": device.min_target_temperature,
+        }))
     else:
         _LOGGER.info("Querying device state.")
         await device.refresh()
+        _LOGGER.info("%s", device)
 
 
 def _run(args) -> NoReturn:

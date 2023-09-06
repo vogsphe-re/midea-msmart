@@ -460,3 +460,24 @@ class AirConditioner(Device):
     @property
     def supports_display_control(self) -> Optional[bool]:
         return self._supports_display_control
+
+    def _to_dict(self) -> dict:
+        return {
+            "power": self.power_state,
+            "mode": self.operational_mode,
+            "fan_speed": self.fan_speed,
+            "swing_mode": self.swing_mode,
+            "target_temperature": self.target_temperature,
+            "indoor_temperature": self.indoor_temperature,
+            "outdoor_temperature": self.outdoor_temperature,
+            "eco": self.eco_mode,
+            "turbo": self.turbo_mode,
+            "freeze_protection": self.freeze_protection_mode,
+            "sleep": self.sleep_mode,
+            "display_on": self.display_on,
+            "beep": self.beep,
+            "fahrenheit": self.fahrenheit,
+        }
+
+    def __str__(self) -> str:
+        return str({**super()._to_dict(), **self._to_dict()})
