@@ -316,6 +316,14 @@ class AirConditioner(Device):
         self._power_state = state
 
     @property
+    def min_target_temperature(self) -> Optional[int]:
+        return self._min_target_temperature
+
+    @property
+    def max_target_temperature(self) -> Optional[int]:
+        return self._max_target_temperature
+
+    @property
     def target_temperature(self) -> Optional[float]:
         return self._target_temperature
 
@@ -324,6 +332,10 @@ class AirConditioner(Device):
         if self._updating:
             self._defer_update = True
         self._target_temperature = temperature_celsius
+
+    @property
+    def supported_operation_modes(self) -> List[OperationalMode]:
+        return self._supported_op_modes
 
     @property
     def operational_mode(self) -> OperationalMode:
@@ -344,6 +356,10 @@ class AirConditioner(Device):
         if self._updating:
             self._defer_update = True
         self._fan_speed = speed
+
+    @property
+    def supported_swing_modes(self) -> List[SwingMode]:
+        return self._supported_swing_modes
 
     @property
     def swing_mode(self) -> SwingMode:
@@ -442,17 +458,5 @@ class AirConditioner(Device):
         return self._off_timer
 
     @property
-    def supported_operation_modes(self) -> List[OperationalMode]:
-        return self._supported_op_modes
-
-    @property
-    def supported_swing_modes(self) -> List[SwingMode]:
-        return self._supported_swing_modes
-
-    @property
-    def min_target_temperature(self) -> Optional[int]:
-        return self._min_target_temperature
-
-    @property
-    def max_target_temperature(self) -> Optional[int]:
-        return self._max_target_temperature
+    def supports_display_control(self) -> Optional[bool]:
+        return self._supports_display_control
