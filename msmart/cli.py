@@ -174,13 +174,13 @@ def main() -> NoReturn:
                               help="Automatically authenticate V3 devices.",
                               action="store_true")
     query_parser.add_argument("--id",
-                              help="Device ID. Required for manual authentication.",
+                              help="Device ID for V3 devices.",
                               dest="device_id", type=int, default=0)
     query_parser.add_argument("--token",
                               help="Authentication token for V3 devices.",
                               type=bytes.fromhex)
     query_parser.add_argument("--key",
-                              help="Authentication ke for V3 devices.",
+                              help="Authentication key for V3 devices.",
                               type=bytes.fromhex)
     query_parser.set_defaults(func=_query)
 
