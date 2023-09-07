@@ -461,8 +461,8 @@ class AirConditioner(Device):
     def supports_display_control(self) -> Optional[bool]:
         return self._supports_display_control
 
-    def _to_dict(self) -> dict:
-        return {
+    def to_dict(self) -> dict:
+        return {**super().to_dict(), **{
             "power": self.power_state,
             "mode": self.operational_mode,
             "fan_speed": self.fan_speed,
@@ -477,7 +477,4 @@ class AirConditioner(Device):
             "display_on": self.display_on,
             "beep": self.beep,
             "fahrenheit": self.fahrenheit,
-        }
-
-    def __str__(self) -> str:
-        return str({**super()._to_dict(), **self._to_dict()})
+        }}

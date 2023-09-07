@@ -32,7 +32,11 @@ async def _discover(args) -> None:
     # Dump only basic device info from the base class
     _LOGGER.info("Found %d devices.", len(devices))
     for device in devices:
-        _LOGGER.info("Found device:\n%s", super(Device, device))
+
+        if isinstance(device, AC):
+            device = super(AC, device)
+
+        _LOGGER.info("Found device:\n%s", device.to_dict())
 
 
 async def _query(args) -> None:

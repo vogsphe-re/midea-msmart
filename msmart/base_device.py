@@ -121,7 +121,7 @@ class Device():
     def supported(self) -> bool:
         return self._supported
 
-    def _to_dict(self) -> dict:
+    def to_dict(self) -> dict:
         return {
             "ip": self.ip,
             "port": self.port,
@@ -136,4 +136,4 @@ class Device():
         }
 
     def __str__(self) -> str:
-        return str(self._to_dict())
+        return str(self.to_dict())
