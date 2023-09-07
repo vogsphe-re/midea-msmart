@@ -147,9 +147,9 @@ def main() -> NoReturn:
 
     # Setup discover parser
     discover_parser = subparsers.add_parser("discover",
-                                            description="Discover device(s) on the local network.", parents=[common_parser])
-    discover_parser.add_argument("--host",
-                                 help="Hostname or IP address of a single device to discover.")
+    discover_parser.add_argument("host",
+                                 help="Hostname or IP address of a single device to discover.",
+                                 nargs="?", default=None)
     discover_parser.add_argument("--count",
                                  help="Number of broadcast packets to send.", default=3, type=int)
     discover_parser.set_defaults(func=_discover)
