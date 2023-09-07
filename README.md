@@ -83,6 +83,7 @@ Discover all devices on the LAN with the `msmart-ng discover` subcommand.
 
 ```shell
 $ msmart-ng discover
+INFO:msmart.cli:Discovering all devices on local network.
 ...
 INFO:msmart.cli:Found 2 devices.
 INFO:msmart.cli:Found device:
@@ -107,7 +108,7 @@ I don't have any V1 devices to test with so please create an issue with the outp
 #### Query
 Query device state and capabilities with the `msmart-ng query` subcommand.
 
-**Note:** Version 3 devices need to specify either the `--auto` argument or the `--token` and `--key` arguments to make a connection.
+**Note:** Version 3 devices need to specify either the `--auto` argument or the `--token`, `--key` and `--id` arguments to make a connection.
 
 ```shell
 $ msmart-ng query <HOST>
