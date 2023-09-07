@@ -42,8 +42,9 @@ async def _discover(args) -> None:
 async def _query(args) -> None:
     """Query device state or capabilities."""
 
-    if args.auto and (args.token or args.key):
-        _LOGGER.warning("--token and --key are ignored with --auto option.")
+    if args.auto and (args.token or args.key or args.device_id):
+        _LOGGER.warning(
+            "--token, --key and --id are ignored with --auto option.")
 
     if args.auto:
         # Use discovery to automatically connect and authenticate with device
@@ -55,7 +56,7 @@ async def _query(args) -> None:
             exit(1)
     else:
         # Manually create device and authenticate
-        device = AC(ip=args.host, port=6444, device_id=0)
+        device = AC(ip=args.host, port=6444, device_id=args.device_id)
         if args.token and args.key:
             await device.authenticate(args.token, args.key)
 
@@ -70,7 +71,7 @@ async def _query(args) -> None:
         if not device.online:
             _LOGGER.error("Device is not online.")
             exit(1)
-        
+
         # TODO method to get caps in string format
         _LOGGER.info("%s", str({
             "supported_modes": device.supported_operation_modes,
@@ -89,7 +90,7 @@ async def _query(args) -> None:
         if not device.online:
             _LOGGER.error("Device is not online.")
             exit(1)
-            
+
         _LOGGER.info("%s", device)
 
 
@@ -139,34 +140,48 @@ def main() -> NoReturn:
     common_parser.add_argument("-d", "--debug",
                                help="Enable debug logging.", action="store_true")
     common_parser.add_argument("--account",
-                               help="MSmartHome or 美的美居 username for discovery and automatic authentication", default=OPEN_MIDEA_APP_ACCOUNT)
+                               help="MSmartHome or 美的美居 username for discovery and automatic authentication",
+                               default=OPEN_MIDEA_APP_ACCOUNT)
     common_parser.add_argument("--password",
-                               help="MSmartHome or 美的美居 password for discovery and automatic authentication.", default=OPEN_MIDEA_APP_PASSWORD)
+                               help="MSmartHome or 美的美居 password for discovery and automatic authentication.",
+                               default=OPEN_MIDEA_APP_PASSWORD)
     common_parser.add_argument("--china",
-                               help="Use China server for discovery and automatic authentication.", action="store_true")
+                               help="Use China server for discovery and automatic authentication.",
+                               action="store_true")
 
     # Setup discover parser
     discover_parser = subparsers.add_parser("discover",
+                                            description="Discover device(s) on the local network.",
+                                            parents=[common_parser])
     discover_parser.add_argument("host",
                                  help="Hostname or IP address of a single device to discover.",
                                  nargs="?", default=None)
     discover_parser.add_argument("--count",
-                                 help="Number of broadcast packets to send.", default=3, type=int)
+                                 help="Number of broadcast packets to send.",
+                                 default=3, type=int)
     discover_parser.set_defaults(func=_discover)
 
     # Setup query parser
     query_parser = subparsers.add_parser("query",
-                                         description="Query information from a device on the local network.", parents=[common_parser])
+                                         description="Query information from a device on the local network.",
+                                         parents=[common_parser])
     query_parser.add_argument("host",
                               help="Hostname or IP address of device.")
     query_parser.add_argument("--capabilities",
-                              help="Query device capabilities instead of state.", action="store_true")
+                              help="Query device capabilities instead of state.",
+                              action="store_true")
     query_parser.add_argument("--auto",
-                              help="Automatically authenticate V3 devices.", action="store_true")
+                              help="Automatically authenticate V3 devices.",
+                              action="store_true")
+    query_parser.add_argument("--id",
+                              help="Device ID. Required for manual authentication.",
+                              dest="device_id", type=int, default=0)
     query_parser.add_argument("--token",
-                              help="Authentication token for V3 devices.",  type=bytes.fromhex)
+                              help="Authentication token for V3 devices.",
+                              type=bytes.fromhex)
     query_parser.add_argument("--key",
-                              help="Authentication ke for V3 devices.", type=bytes.fromhex)
+                              help="Authentication ke for V3 devices.",
+                              type=bytes.fromhex)
     query_parser.set_defaults(func=_query)
 
     # Run with args
