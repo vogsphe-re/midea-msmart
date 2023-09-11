@@ -438,7 +438,7 @@ class LAN:
         except (TimeoutError, asyncio.TimeoutError) as e:
             raise TimeoutError("Connect timeout.") from e
         except OSError as e:
-            raise ProtocolError(f"Connect failed.") from e
+            raise ProtocolError("Connect failed.") from e
 
         self._protocol = protocol
 
