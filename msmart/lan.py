@@ -429,10 +429,7 @@ class LAN:
         except OSError as e:
             raise ProtocolError(f"Connect failed.") from e
 
-        if self._protocol_version == 3:
-            self._protocol = cast(_LanProtocolV3, protocol)
-        else:
-            self._protocol = cast(_LanProtocol, protocol)
+        self._protocol = protocol
 
     def _disconnect(self) -> None:
         if self._protocol:
@@ -464,15 +461,15 @@ class LAN:
             self._protocol_version = 3
             await self._connect()
 
-        # A protocol should exist at this point
-        assert self._protocol is not None
+        # A V3 protocol should exist at this point
+        assert isinstance(self._protocol, _LanProtocolV3)
 
         _LOGGER.info("Authenticating with %s.", self._protocol.peer)
 
         # Attempt to authenticate
         while retries > 0:
             try:
-                await cast(_LanProtocolV3, self._protocol).authenticate(token, key)
+                await self._protocol.authenticate(token, key)
                 break
             except (TimeoutError, asyncio.TimeoutError) as e:
                 if retries > 1:
