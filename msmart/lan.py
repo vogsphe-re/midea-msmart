@@ -167,6 +167,10 @@ class _LanProtocolV3(_LanProtocol):
         self._buffer = bytearray(0)
         self._local_key = None
 
+    @property
+    def authenticated(self) -> bool:
+        return self._local_key is not None
+
     def data_received(self, data: bytes) -> None:
         """Handle data received events."""
 
@@ -333,7 +337,7 @@ class _LanProtocolV3(_LanProtocol):
         """Send a packet of the specified type to the peer."""
 
         # Raise an error if attempting to send an encrypted request without authenticating
-        if packet_type == self.PacketType.ENCRYPTED_REQUEST and self._local_key is None:
+        if packet_type == self.PacketType.ENCRYPTED_REQUEST and not self.authenticated:
             raise ProtocolError("Protocol has not been authenticated.")
 
         # Encode the data according to the supplied type
@@ -413,6 +417,13 @@ class LAN:
     def key(self) -> Optional[bytes]:
         return self._key
 
+    @property
+    def _alive(self) -> bool:
+        if self._protocol is None:
+            return False
+
+        return self._protocol.alive
+
     async def _connect(self) -> None:
         _LOGGER.info("Creating new connection to %s:%s", self._ip, self._port)
 
@@ -452,11 +463,8 @@ class LAN:
             token = convert(token)
             key = convert(key)
 
-        # Disconnect any existing V2 protocol
-        if self._protocol_version == 2:
-            self._disconnect()
-
-        if self._protocol is None or not self._protocol.alive:
+        # Create a connection if not alive or protocol isn't V3
+        if (not self._alive or not isinstance(self._protocol, _LanProtocolV3)):
             self._disconnect()
             self._protocol_version = 3
             await self._connect()
@@ -507,16 +515,16 @@ class LAN:
         """Send data via the LAN protocol. Connecting to the peer if necessary."""
 
         # Connect if protocol doesn't exist or is dead
-        if self._protocol is None or not self._protocol.alive:
+        if not self._alive:
             self._disconnect()
             await self._connect()
 
-            # Reauthenticate if needed
-            if self._protocol_version == 3:
-                await self.authenticate()
-
         # A protocol should exist at this point
         assert self._protocol is not None
+
+        # Authenticate as needed
+        if isinstance(self._protocol, _LanProtocolV3) and not self._protocol.authenticated:
+            await self.authenticate()
 
         # Encode frame to packet
         packet = _Packet.encode(self._device_id, data)
