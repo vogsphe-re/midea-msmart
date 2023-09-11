@@ -426,6 +426,8 @@ class LAN:
             _transport, protocol = await asyncio.wait_for(task, timeout=5)
         except (TimeoutError, asyncio.TimeoutError) as e:
             raise TimeoutError("Connect timeout.") from e
+        except OSError as e:
+            raise ProtocolError(f"Connect failed.") from e
 
         if self._protocol_version == 3:
             self._protocol = cast(_LanProtocolV3, protocol)
