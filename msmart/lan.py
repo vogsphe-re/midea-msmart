@@ -5,7 +5,7 @@ import struct
 from datetime import datetime
 from enum import IntEnum
 from hashlib import md5, sha256
-from typing import List, Optional, Union, cast
+from typing import List, Optional, Tuple, Union, cast
 
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
@@ -65,10 +65,8 @@ class _LanProtocol(asyncio.Protocol):
 
         return True
 
-    def _format_socket_name(self, sockname) -> str:
-        def _format(addr, port):
-            return f"{addr}:{port}"
-        return _format(*sockname)
+    def _format_socket_name(self, sockname: Tuple[str, int]) -> str:
+        return f"{sockname[0]}:{sockname[1]}"
 
     def connection_made(self, transport) -> None:
         """Handle connection events."""
@@ -425,7 +423,7 @@ class LAN:
         return self._protocol.alive
 
     async def _connect(self) -> None:
-        _LOGGER.info("Creating new connection to %s:%s", self._ip, self._port)
+        _LOGGER.info("Creating new connection to %s:%d.", self._ip, self._port)
 
         protocol_class = _LanProtocolV3 if self._protocol_version == 3 else _LanProtocol
 
