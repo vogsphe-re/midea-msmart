@@ -403,7 +403,6 @@ class _LanProtocolV3(_LanProtocol):
         with memoryview(response) as response_mv:
             key = self._get_local_key(key, response_mv)
 
-        _LOGGER.info("Authentication successful. Local key: %s", key.hex())
         return key
 
 
@@ -496,7 +495,6 @@ class LAN:
         while retries > 0:
             try:
                 self._auth_local_key = await self._protocol.authenticate(token, key)
-                self._auth_expiration = datetime.utcnow() + self.AUTHENTICATION_EXPIRATION
                 break
             except (TimeoutError, asyncio.TimeoutError) as e:
                 if retries > 1:
@@ -504,6 +502,15 @@ class LAN:
                     retries -= 1
                 else:
                     raise TimeoutError("No response from host.") from e
+
+        # A local key should exist now
+        assert self._auth_local_key is not None
+
+        # Set expiration time
+        self._auth_expiration = datetime.utcnow() + self.AUTHENTICATION_EXPIRATION
+
+        _LOGGER.info("Authentication successful. Expiration: %s, Local key: %s",
+                     self._auth_expiration.isoformat(timespec="seconds"), self._auth_local_key.hex())
 
         # Update stored token and key if successful
         self._token = token
