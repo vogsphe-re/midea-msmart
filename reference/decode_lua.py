@@ -1,6 +1,7 @@
-from hashlib import sha256
-from Crypto.Cipher import AES
 import sys
+from hashlib import sha256
+
+from Crypto.Cipher import AES
 
 APP_KEY = "ac21b9f9cbfe4ca5a88562ef25e2b768"
 
