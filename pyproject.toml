@@ -35,4 +35,7 @@ Issues = "https://github.com/mill1000/midea-msmart/issues"
 midea-discover = "msmart.cli:_legacy_main"
 msmart-ng = "msmart.cli:main"
 
+[tool.setuptools]
+packages=["msmart"]
+
 [tool.setuptools_scm]
