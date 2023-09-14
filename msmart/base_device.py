@@ -121,8 +121,8 @@ class Device():
     def supported(self) -> bool:
         return self._supported
 
-    def __str__(self) -> str:
-        return str({
+    def to_dict(self) -> dict:
+        return {
             "ip": self.ip,
             "port": self.port,
             "id": self.id,
@@ -133,4 +133,7 @@ class Device():
             "sn": self.sn,
             "key": self.key,
             "token": self.token
-        })
+        }
+
+    def __str__(self) -> str:
+        return str(self.to_dict())
