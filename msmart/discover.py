@@ -248,9 +248,9 @@ class Discover:
 
             # Use start of packet data to differentiate between V2 and V3
             start_of_packet = data_mv[:2]
-            if start_of_packet == b'\x5a\x5a':
+            if start_of_packet == b"\x5a\x5a":
                 return 2
-            elif start_of_packet == b'\x83\x70':
+            elif start_of_packet == b"\x83\x70":
                 return 3
 
         raise DiscoverError()
@@ -307,7 +307,7 @@ class Discover:
                 encrypted_data = data_mv[40:-16]
 
                 # Extract ID
-                device_id = int.from_bytes(data_mv[20:26], 'little')
+                device_id = int.from_bytes(data_mv[20:26], "little")
 
                 # Attempt to decrypt the packet
                 try:
@@ -323,7 +323,7 @@ class Discover:
                 # Extract IP and port
                 ip_address = str(ipaddress.IPv4Address(
                     decrypted_mv[3::-1].tobytes()))
-                port = int.from_bytes(decrypted_mv[4:6], 'little')
+                port = int.from_bytes(decrypted_mv[4:6], "little")
 
                 if ip_address != ip:
                     _LOGGER.warning(
@@ -336,7 +336,7 @@ class Discover:
                 name_length = decrypted_mv[40]
                 name = decrypted_mv[41:41+name_length].tobytes().decode()
 
-                device_type = int(name.split('_')[1], 16)
+                device_type = int(name.split("_")[1], 16)
 
             # Return dictionary of device info
             return {"ip": ip_address, "port": port, "device_id": device_id, "name": name, "sn": sn, "device_type": device_type, "version": version}

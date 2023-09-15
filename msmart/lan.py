@@ -77,7 +77,7 @@ class _LanProtocol(asyncio.Protocol):
         self._transport = transport
 
         # Save peer name for logging
-        peername = transport.get_extra_info('peername')
+        peername = transport.get_extra_info("peername")
         self._peer = self._format_socket_name(peername)
 
         _LOGGER.debug("Connected to %s.", self._peer)
@@ -660,11 +660,11 @@ class _Packet:
 
         header = b"\x5A\x5A"  # Start of packet
         header += b"\x01\x11"  # Message type
-        header += length.to_bytes(2, 'little')  # Packet size
+        header += length.to_bytes(2, "little")  # Packet size
         header += b"\x20\x00"  # Magic bytes
         header += bytes(4)  # Message ID
         header += cls._timestamp()  # Timestamp
-        header += device_id.to_bytes(8, 'little')  # Device ID
+        header += device_id.to_bytes(8, "little")  # Device ID
         header += bytes(12)  # ???
 
         packet = header + encrypted_payload

@@ -118,7 +118,7 @@ class Cloud:
         # Sign the contents and add it to the header
         sign = self._security.sign(contents, random)
         headers = {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
             "secretVersion": "1",
             "sign": sign,
             "random": random,
@@ -212,7 +212,7 @@ class Cloud:
         """Get token and key for the provided udpid."""
 
         response = await self._api_request(
-            '/v1/iot/secure/getToken',
+            "/v1/iot/secure/getToken",
             self._build_request_body({"udpid": udpid})
         )
 
