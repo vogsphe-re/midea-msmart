@@ -23,8 +23,8 @@ DEVICE_INFO_MSG = bytes([
 ])
 
 
-OPEN_MIDEA_APP_ACCOUNT = 'midea_is_best@outlook.com'
-OPEN_MIDEA_APP_PASSWORD = 'lovemidea4ever'
+OPEN_MIDEA_APP_ACCOUNT = "midea@mailinator.com"
+OPEN_MIDEA_APP_PASSWORD = "this_is_a_password1"
 
 
 class DeviceType(IntEnum):
