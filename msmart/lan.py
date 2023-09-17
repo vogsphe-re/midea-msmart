@@ -140,6 +140,8 @@ class _LanProtocol(asyncio.Protocol):
 class _LanProtocolV3(_LanProtocol):
     """Midea LAN protocol V3."""
 
+    AUTHENTICATION_EXPIRATION = timedelta(hours=12)
+
     class PacketType(IntEnum):
         HANDSHAKE_REQUEST = 0x0
         HANDSHAKE_RESPONSE = 0x1
@@ -173,14 +175,18 @@ class _LanProtocolV3(_LanProtocol):
         self._packet_id = 0
         self._buffer = bytearray(0)
         self._local_key = None
+        self._local_key_expiration = None
 
     @property
-    def local_key(self) -> Optional[bytes]:
-        return self._local_key
+    def authenticated(self) -> bool:
+        if self._local_key is None or self._local_key_expiration is None:
+            return False
 
-    @local_key.setter
-    def local_key(self, key: bytes) -> None:
-        self._local_key = key
+        if datetime.utcnow() > self._local_key_expiration:
+            _LOGGER.debug("Authentication with %s has expired.", self.peer)
+            return False
+
+        return True
 
     def data_received(self, data: bytes) -> None:
         """Handle data received events."""
@@ -383,7 +389,7 @@ class _LanProtocolV3(_LanProtocol):
         # Construct the local key
         return strxor(decrypted_payload, key)
 
-    async def authenticate(self, token: Optional[bytes], key: Optional[bytes]) -> bytes:
+    async def authenticate(self, token: Optional[bytes], key: Optional[bytes]) -> None:
 
         # Raise an exception if trying to auth without any token or key
         if not token or not key:
@@ -401,14 +407,17 @@ class _LanProtocolV3(_LanProtocol):
 
         # Generate local key from cloud key
         with memoryview(response) as response_mv:
-            key = self._get_local_key(key, response_mv)
+            self._local_key = self._get_local_key(key, response_mv)
 
-        return key
+        # Set expiration time
+        self._local_key_expiration = datetime.utcnow() + self.AUTHENTICATION_EXPIRATION
+
+        _LOGGER.info("Authentication successful. Expiration: %s, Local key: %s",
+                     self._local_key_expiration.isoformat(timespec="seconds"), self._local_key.hex())
 
 
 class LAN:
     RETRIES = 3
-    AUTHENTICATION_EXPIRATION = timedelta(hours=12)
 
     def __init__(self, ip: str, port: int, device_id: int) -> None:
         self._ip = ip
@@ -419,8 +428,9 @@ class LAN:
         self._key = None
         self._protocol_version = 2
         self._protocol = None
-        self._auth_local_key = None
-        self._auth_expiration = None
+
+        self._connection_expiration = None
+        self._max_connection_lifetime = None
 
     @property
     def token(self) -> Optional[bytes]:
@@ -431,18 +441,37 @@ class LAN:
         return self._key
 
     @property
+    def max_connection_lifetime(self) -> Optional[int]:
+        """Get the maximum connection lifetime in seconds."""
+        if self._max_connection_lifetime is None:
+            return None
+
+        return int(self._max_connection_lifetime.total_seconds())
+
+    @max_connection_lifetime.setter
+    def max_connection_lifetime(self, seconds: Optional[int]) -> None:
+        """Set the maximum connection lifetime in seconds."""
+        self._max_connection_lifetime = None if seconds is None else timedelta(
+            seconds=seconds)
+
+    @property
     def _alive(self) -> bool:
-        if self._protocol is None:
+        # Check if protocol exists, and if it's alive
+        if self._protocol is None or not self._protocol.alive:
             return False
 
-        return self._protocol.alive
+        # Use connection expiration if set
+        if self._connection_expiration and datetime.utcnow() > self._connection_expiration:
+            _LOGGER.debug("Connection to %s has expired.", self._protocol.peer)
+            return False
+
+        return True
 
     async def _connect(self) -> None:
         _LOGGER.info("Creating new connection to %s:%d.", self._ip, self._port)
 
         protocol_class = _LanProtocolV3 if self._protocol_version == 3 else _LanProtocol
 
-        # TODO throws OSError and ???
         loop = asyncio.get_event_loop()
         task = loop.create_connection(
             lambda: protocol_class(), self._ip, self._port)  # pylint: disable=unnecessary-lambda
@@ -455,14 +484,13 @@ class LAN:
 
         self._protocol = protocol
 
+        if self._max_connection_lifetime:
+            self._connection_expiration = datetime.utcnow() + self._max_connection_lifetime
+
     def _disconnect(self) -> None:
         if self._protocol:
             self._protocol.disconnect()
             self._protocol = None
-
-        # Clear auth info to force reauth
-        self._auth_local_key = None
-        self._auth_expiration = None
 
     async def authenticate(self, token: Token = None, key: Key = None, retries: int = RETRIES) -> None:
         """Authenticate against a V3 device. Use cached token and key unless provided a new token and key."""
@@ -494,7 +522,7 @@ class LAN:
         # Attempt to authenticate
         while retries > 0:
             try:
-                self._auth_local_key = await self._protocol.authenticate(token, key)
+                await self._protocol.authenticate(token, key)
                 break
             except (TimeoutError, asyncio.TimeoutError) as e:
                 if retries > 1:
@@ -503,14 +531,8 @@ class LAN:
                 else:
                     raise TimeoutError("No response from host.") from e
 
-        # A local key should exist now
-        assert self._auth_local_key is not None
-
-        # Set expiration time
-        self._auth_expiration = datetime.utcnow() + self.AUTHENTICATION_EXPIRATION
-
-        _LOGGER.info("Authentication successful. Expiration: %s, Local key: %s",
-                     self._auth_expiration.isoformat(timespec="seconds"), self._auth_local_key.hex())
+        # Protocol should be authenticated by now
+        assert self._protocol.authenticated
 
         # Update stored token and key if successful
         self._token = token
@@ -558,17 +580,12 @@ class LAN:
         assert self._protocol is not None
 
         # Authenticate as needed
-        if isinstance(self._protocol, _LanProtocolV3):
-            # Authorize if key is invalid or expired
-            if (self._auth_local_key is None or self._auth_expiration is None
-                    or datetime.utcnow() > self._auth_expiration):
-                await self.authenticate()
+        if (isinstance(self._protocol, _LanProtocolV3)
+                and not self._protocol.authenticated):
+            await self.authenticate()
 
-            # A local auth key should exist now
-            assert self._auth_local_key is not None
-
-           # Set key in protocol
-            self._protocol.local_key = self._auth_local_key
+            # Protocol should be authenticated now
+            assert self._protocol.authenticated
 
         # Encode frame to packet
         packet = _Packet.encode(self._device_id, data)
