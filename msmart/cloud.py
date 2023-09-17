@@ -13,6 +13,7 @@ import httpx
 from Crypto.Cipher import AES
 from Crypto.Util import Padding
 
+from msmart.const import DeviceType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -228,6 +229,38 @@ class Cloud:
 
         # No matching udpId in the tokenlist
         raise CloudError(f"No token/key found for udpid {udpid}.")
+
+    async def get_protocol_lua(self, device_type: DeviceType, sn: str) -> Tuple[str, str]:
+        """Fetch and decode the protocol Lua file."""
+
+        response = await self._api_request(
+            "/v2/luaEncryption/luaGet",
+            self._build_request_body({
+                "applianceMFCode": "0000",
+                "applianceSn": self._security.encrypt_aes_app_key(sn.encode("UTF-8")).hex(),
+                "applianceType": hex(device_type),
+                "encryptedType ": 2,
+                "version": "0"
+            })
+        )
+
+        # Assert response is not None since we should throw on errors
+        assert response is not None
+
+        file_name = response["fileName"]
+        url = response["url"]
+        async with httpx.AsyncClient() as client:
+            try:
+                # Get file from server
+                r = await client.get(url, timeout=10.0)
+                r.raise_for_status()
+            except httpx.TimeoutException as e:
+                raise CloudError("No response from server.") from e
+
+        encrypted_data = bytes.fromhex(r.text)
+        file_data = self._security.decrypt_aes_app_key(
+            encrypted_data).decode("UTF-8")
+        return (file_name, file_data)
 
 
 class _Security:
