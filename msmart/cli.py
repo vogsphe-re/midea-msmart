@@ -4,9 +4,9 @@ import logging
 from typing import NoReturn
 
 from msmart import __version__
+from msmart.cloud import Cloud, CloudError
 from msmart.const import OPEN_MIDEA_APP_ACCOUNT, OPEN_MIDEA_APP_PASSWORD
 from msmart.device import AirConditioner as AC
-from msmart.device import Device
 from msmart.discover import Discover
 
 _LOGGER = logging.getLogger(__name__)
@@ -92,6 +92,42 @@ async def _query(args) -> None:
             exit(1)
 
         _LOGGER.info("%s", device)
+
+
+async def _download_protocol(args) -> None:
+    """Download a device's protocol implementation from the cloud."""
+
+    # Use discovery to to find device information
+    _LOGGER.info("Discovering %s on local network.", args.host)
+    device = await Discover.discover_single(args.host, account=args.account, password=args.password, auto_connect=False)
+
+    if device is None:
+        _LOGGER.error("Device not found.")
+        exit(1)
+
+    if isinstance(device, AC):
+        device = super(AC, device)
+
+    _LOGGER.info("Found device:\n%s", device.to_dict())
+
+    if device.sn is None:
+        _LOGGER.error("A device SN is required to download the protocol.")
+        exit(1)
+
+    # Get cloud connection
+    cloud = Cloud(args.account, args.password)
+    try:
+        await cloud.login()
+    except CloudError as e:
+        _LOGGER.error("Failed to establish cloud connection. Error: %s", e)
+        exit(1)
+
+    _LOGGER.info("Downloading protocol from cloud.")
+    file_name, lua_file = await cloud.get_protocol_lua(device.type, device.sn)
+
+    _LOGGER.info("Writing protocol to '%s'.", file_name)
+    with open(file_name, "w") as f:
+        f.write(lua_file)
 
 
 def _run(args) -> NoReturn:
@@ -183,6 +219,14 @@ def main() -> NoReturn:
                               help="Authentication key for V3 devices.",
                               type=bytes.fromhex)
     query_parser.set_defaults(func=_query)
+
+    # Setup download parser
+    download = subparsers.add_parser("download",
+                                     description="Download a device's protocol implementation from the cloud.",
+                                     parents=[common_parser])
+    download.add_argument("host",
+                          help="Hostname or IP address of device.")
+    download.set_defaults(func=_download_protocol)
 
     # Run with args
     _run(parser.parse_args())

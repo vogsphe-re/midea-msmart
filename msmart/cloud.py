@@ -10,6 +10,10 @@ from secrets import token_hex, token_urlsafe
 from typing import Any, Dict, Optional, Tuple
 
 import httpx
+from Crypto.Cipher import AES
+from Crypto.Util import Padding
+
+from msmart.const import DeviceType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -226,6 +230,38 @@ class Cloud:
         # No matching udpId in the tokenlist
         raise CloudError(f"No token/key found for udpid {udpid}.")
 
+    async def get_protocol_lua(self, device_type: DeviceType, sn: str) -> Tuple[str, str]:
+        """Fetch and decode the protocol Lua file."""
+
+        response = await self._api_request(
+            "/v2/luaEncryption/luaGet",
+            self._build_request_body({
+                "applianceMFCode": "0000",
+                "applianceSn": self._security.encrypt_aes_app_key(sn.encode("UTF-8")).hex(),
+                "applianceType": hex(device_type),
+                "encryptedType ": 2,
+                "version": "0"
+            })
+        )
+
+        # Assert response is not None since we should throw on errors
+        assert response is not None
+
+        file_name = response["fileName"]
+        url = response["url"]
+        async with httpx.AsyncClient() as client:
+            try:
+                # Get file from server
+                r = await client.get(url, timeout=10.0)
+                r.raise_for_status()
+            except httpx.TimeoutException as e:
+                raise CloudError("No response from server.") from e
+
+        encrypted_data = bytes.fromhex(r.text)
+        file_data = self._security.decrypt_aes_app_key(
+            encrypted_data).decode("UTF-8")
+        return (file_name, file_data)
+
 
 class _Security:
     """"Class for Midea cloud specific security."""
@@ -237,6 +273,9 @@ class _Security:
 
     IOT_KEY_CHINA = "prod_secret123@muc"
     LOGIN_KEY_CHINA = "ad0ee21d48a64bf49f4fb583ab76e799"
+
+    # MSmartHome
+    APP_KEY = "ac21b9f9cbfe4ca5a88562ef25e2b768"
 
     def __init__(self, use_china_server=False):
         self._use_china_server = use_china_server
@@ -286,3 +325,17 @@ class _Security:
         sha = hashlib.sha256(login_hash.encode("ASCII"))
 
         return sha.hexdigest()
+
+    def _get_app_key_and_iv(self) -> Tuple[bytes, bytes]:
+        hash = hashlib.sha256(self.APP_KEY.encode()).hexdigest()
+        return (hash[:16].encode(), hash[16:32].encode())
+
+    def encrypt_aes_app_key(self, data: bytes) -> bytes:
+        key, iv = self._get_app_key_and_iv()
+        cipher = AES.new(key, AES.MODE_CBC, iv=iv)
+        return cipher.encrypt(Padding.pad(data, 16))
+
+    def decrypt_aes_app_key(self, data: bytes) -> bytes:
+        key, iv = self._get_app_key_and_iv()
+        cipher = AES.new(key, AES.MODE_CBC, iv=iv)
+        return Padding.unpad(cipher.decrypt(data), 16)
