@@ -116,7 +116,9 @@ class SetStateCommand(Command):
 
         # Build target temp and mode byte
         fractional, integral = math.modf(self.target_temperature)
-        temperature = (int(integral) & 0xF) | (0x10 if fractional > 0 else 0)
+        temperature2 = (int(integral) - 12) & 0x1F
+        temperature = (int(integral) - 16) if integral > 16 else 1
+        temperature = (temperature & 0xF) | (0x10 if fractional > 0 else 0)
         mode = (self.operational_mode & 0x7) << 5
 
         # Build swing mode byte
@@ -141,7 +143,7 @@ class SetStateCommand(Command):
             0x40,
             # Beep and power state
             self.CONTROL_SOURCE | beep | power,
-            # Temperature and operational mode
+            # Temperature part 1 and operational mode
             temperature | mode,
             # Fan speed
             self.fan_speed,
@@ -157,7 +159,10 @@ class SetStateCommand(Command):
             sleep | turbo | fahrenheit,
             # Unknown
             0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00,
+            # Temperature part 2
+            temperature2,
+            # Unknown
             0x00, 0x00,
             # Frost/freeze protection
             freeze_protect,
@@ -468,7 +473,11 @@ class StateResponse(Response):
         # self.appliance_error = (payload[1] & 0x80) > 0
 
         # Unpack target temp and mode byte
-        self.target_temperature = (payload[2] & 0xF) + 16.0
+        self.target_temperature = payload[13] & 0x1F
+        if self.target_temperature != 0:
+            self.target_temperature += 12
+        else:
+            self.target_temperature = (payload[2] & 0xF) + 16.0
         self.target_temperature += 0.5 if payload[2] & 0x10 else 0.0
         self.operational_mode = (payload[2] >> 5) & 0x7
 
