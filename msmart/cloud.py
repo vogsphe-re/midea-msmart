@@ -287,7 +287,7 @@ class Cloud:
 
         file_name = result["title"]
         url = result["url"]
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=False) as client:
             try:
                 # Get file from server
                 r = await client.get(url, timeout=10.0)
