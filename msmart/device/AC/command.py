@@ -24,6 +24,8 @@ class ResponseId(IntEnum):
 
 
 class CapabilityId(IntEnum):
+    SWING_UD_ANGLE = 0x0009
+    SWING_LR_ANGLE = 0x000A
     INDOOR_HUMIDITY = 0x0015
     SILKY_COOL = 0x0018
     SMART_EYE = 0x0030
@@ -31,7 +33,18 @@ class CapabilityId(IntEnum):
     WIND_OFF_ME = 0x0033
     SELF_CLEAN = 0x0039  # AKA Acive Clean
     ONE_KEY_NO_WIND_ON_ME = 0x0042
-    BREEZE_CONTROL = 0x0043
+    BREEZE_CONTROL = 0x0043  # AKA "FA No Wind Sense"
+    RATE_SELECT = 0x0048
+    FRESH_AIR = 0x004B
+    PARENT_CONTROL = 0x0051  # ??
+    PREVENT_STRAIGHT_WIND_SELECT = 0x0058  # ??
+    WIND_AROUND = 0x0059  # ??
+    JET_COOL = 0x0067  # ??
+    IECO_SWITCH = 0x00E3  # ??
+    ICHECK = 0x0091  # ??
+    EMERGENT_HEAT_WIND = 0x0093  # ??
+    HEAT_PTC_WIND = 0x0094  # ??
+    CVP = 0x0098  # ??
     FAN_SPEED_CONTROL = 0x0210
     PRESET_ECO = 0x0212
     PRESET_FREEZE_PROTECTION = 0x0213
@@ -39,13 +52,20 @@ class CapabilityId(IntEnum):
     SWING_MODES = 0x0215
     POWER = 0x0216
     FILTER_REMIND = 0x0217
-    AUX_ELECTRIC_HEAT = 0x0219
+    AUX_ELECTRIC_HEAT = 0x0219  # AKA PTC
     PRESET_TURBO = 0x021A
+    FILTER_CHECK = 0x0221
+    ANION = 0x021E
     HUMIDITY = 0x021F
     FAHRENHEIT = 0x0222
     DISPLAY_CONTROL = 0x0224
     TEMPERATURES = 0x0225
     BUZZER = 0x022C
+    MAIN_HORIZONTAL_GUIDE_STRIP = 0x0230  # ??
+    SUP_HORIZONTAL_GUIDE_STRIP = 0x0231  # ??
+    TWINS_MACHINE = 0x0232  # ??
+    GUIDE_STRIP_TYPE = 0x0233  # ??
+    BODY_CHECK = 0x0234  # ??
 
 
 class TemperatureType(IntEnum):
