@@ -276,26 +276,27 @@ class CapabilitiesResponse(Response):
             CapabilityId.SELF_CLEAN:  reader("self_clean", get_value(1)),
             CapabilityId.ONE_KEY_NO_WIND_ON_ME: reader("one_key_no_wind_on_me", get_value(1)),
             CapabilityId.BREEZE_CONTROL: reader("breeze_control", get_value(1)),
-            # Fan speed control always seems to return false, even if unit can
-            CapabilityId.FAN_SPEED_CONTROL: reader("fan_speed_control", lambda v: v != 1),
+            # TODO Fan speed control is decoded via a map in the reference
+            CapabilityId.FAN_SPEED_CONTROL: reader("fan_speed_control", lambda v: v),
             CapabilityId.PRESET_ECO: [
                 reader("eco_mode", get_value(1)),
                 reader("eco_mode_2", get_value(2)),
             ],
             CapabilityId.PRESET_FREEZE_PROTECTION: reader("freeze_protection", get_value(1)),
             CapabilityId.MODES: [
-                reader("heat_mode", lambda v: v == 1 or v == 2),
+                reader("heat_mode", lambda v: v in [1, 2, 4, 6, 7, 9]),
                 reader("cool_mode", lambda v: v != 2),
-                reader("dry_mode", lambda v: v < 2),
-                reader("auto_mode", lambda v: v < 3),
+                reader("dry_mode", lambda v: v in [0, 1, 5, 6, 9]),
+                reader("auto_mode", lambda v: v in [0, 1, 2, 7, 8, 9]),
             ],
             CapabilityId.SWING_MODES: [
                 reader("swing_horizontal", lambda v: v == 1 or v == 3),
                 reader("swing_vertical", lambda v: v < 2),
             ],
             CapabilityId.POWER: [
-                reader("power_cal", lambda v: v == 2 or v == 3),
-                reader("power_cal_setting", lambda v: v == 3),
+                reader("power_stats", lambda v: v in [2, 3, 4, 5]),
+                reader("power_setting", lambda v: v in [3, 5]),
+                reader("power_bcd", lambda v: v in [4, 5]),
             ],
             CapabilityId.FILTER_REMIND: [
                 reader("filter_notice", lambda v: v == 1 or v == 2 or v == 4),
@@ -373,7 +374,9 @@ class CapabilitiesResponse(Response):
                 self._capabilities["heat_min_temperature"] = caps[7] * 0.5
                 self._capabilities["heat_max_temperature"] = caps[8] * 0.5
 
-                self._capabilities["decimals"] = caps[9] == 0 if size > 6 else caps[2] == 0
+                # TODO The else of this condition is commented out in reference code
+                self._capabilities["decimals"] = (
+                    caps[9] if size > 6 else caps[2]) != 0
 
             else:
                 _LOGGER.warning(
