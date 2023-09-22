@@ -29,7 +29,7 @@ class CapabilityId(IntEnum):
     SMART_EYE = 0x0030
     WIND_ON_ME = 0x0032
     WIND_OFF_ME = 0x0033
-    ACTIVE_CLEAN = 0x0039
+    SELF_CLEAN = 0x0039  # AKA Acive Clean
     ONE_KEY_NO_WIND_ON_ME = 0x0042
     BREEZE_CONTROL = 0x0043
     FAN_SPEED_CONTROL = 0x0210
@@ -38,12 +38,12 @@ class CapabilityId(IntEnum):
     MODES = 0x0214
     SWING_MODES = 0x0215
     POWER = 0x0216
-    NEST = 0x0217
+    FILTER_REMIND = 0x0217
     AUX_ELECTRIC_HEAT = 0x0219
     PRESET_TURBO = 0x021A
     HUMIDITY = 0x021F
-    UNIT_CHANGEABLE = 0x0222
-    LIGHT_CONTROL = 0x0224
+    FAHRENHEIT = 0x0222
+    DISPLAY_CONTROL = 0x0224
     TEMPERATURES = 0x0225
     BUZZER = 0x022C
 
@@ -273,7 +273,7 @@ class CapabilitiesResponse(Response):
             CapabilityId.SMART_EYE:  reader("smart_eye", get_value(1)),
             CapabilityId.WIND_ON_ME:  reader("wind_on_me", get_value(1)),
             CapabilityId.WIND_OFF_ME:  reader("wind_off_me", get_value(1)),
-            CapabilityId.ACTIVE_CLEAN:  reader("active_clean", get_value(1)),
+            CapabilityId.SELF_CLEAN:  reader("self_clean", get_value(1)),
             CapabilityId.ONE_KEY_NO_WIND_ON_ME: reader("one_key_no_wind_on_me", get_value(1)),
             CapabilityId.BREEZE_CONTROL: reader("breeze_control", get_value(1)),
             # Fan speed control always seems to return false, even if unit can
@@ -297,9 +297,9 @@ class CapabilitiesResponse(Response):
                 reader("power_cal", lambda v: v == 2 or v == 3),
                 reader("power_cal_setting", lambda v: v == 3),
             ],
-            CapabilityId.NEST: [
-                reader("nest_check", lambda v: v == 1 or v == 2 or v == 4),
-                reader("nest_need_change", lambda v: v == 3 or v == 4),
+            CapabilityId.FILTER_REMIND: [
+                reader("filter_notice", lambda v: v == 1 or v == 2 or v == 4),
+                reader("filter_clean", lambda v: v == 3 or v == 4),
             ],
             CapabilityId.AUX_ELECTRIC_HEAT: reader("aux_electric_heat", get_bool),
             CapabilityId.PRESET_TURBO:  [
@@ -311,8 +311,8 @@ class CapabilitiesResponse(Response):
                 reader("humidity_auto_set", lambda v: v == 1 or v == 2),
                 reader("humidity_manual_set", lambda v: v == 2 or v == 3),
             ],
-            CapabilityId.UNIT_CHANGEABLE: reader("unit_changeable", get_value(0)),
-            CapabilityId.LIGHT_CONTROL: reader("light_control", get_bool),
+            CapabilityId.FAHRENHEIT: reader("fahrenheit", get_value(0)),
+            CapabilityId.DISPLAY_CONTROL: reader("display_control", get_bool),
             # Temperatures capability too complex to be handled here
             CapabilityId.BUZZER:  reader("buzzer", get_bool),
         }
@@ -420,7 +420,7 @@ class CapabilitiesResponse(Response):
 
     @property
     def display_control(self) -> bool:
-        return self._capabilities.get("light_control", False)
+        return self._capabilities.get("display_control", False)
 
     @property
     def min_temperature(self) -> int:
