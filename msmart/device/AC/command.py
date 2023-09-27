@@ -24,28 +24,48 @@ class ResponseId(IntEnum):
 
 
 class CapabilityId(IntEnum):
+    SWING_UD_ANGLE = 0x0009
+    SWING_LR_ANGLE = 0x000A
     INDOOR_HUMIDITY = 0x0015
     SILKY_COOL = 0x0018
     SMART_EYE = 0x0030
     WIND_ON_ME = 0x0032
     WIND_OFF_ME = 0x0033
-    ACTIVE_CLEAN = 0x0039
+    SELF_CLEAN = 0x0039  # AKA Acive Clean
     ONE_KEY_NO_WIND_ON_ME = 0x0042
-    BREEZE_CONTROL = 0x0043
+    BREEZE_CONTROL = 0x0043  # AKA "FA No Wind Sense"
+    RATE_SELECT = 0x0048
+    FRESH_AIR = 0x004B
+    PARENT_CONTROL = 0x0051  # ??
+    PREVENT_STRAIGHT_WIND_SELECT = 0x0058  # ??
+    WIND_AROUND = 0x0059  # ??
+    JET_COOL = 0x0067  # ??
+    IECO_SWITCH = 0x00E3  # ??
+    ICHECK = 0x0091  # ??
+    EMERGENT_HEAT_WIND = 0x0093  # ??
+    HEAT_PTC_WIND = 0x0094  # ??
+    CVP = 0x0098  # ??
     FAN_SPEED_CONTROL = 0x0210
     PRESET_ECO = 0x0212
     PRESET_FREEZE_PROTECTION = 0x0213
     MODES = 0x0214
     SWING_MODES = 0x0215
     POWER = 0x0216
-    NEST = 0x0217
-    AUX_ELECTRIC_HEAT = 0x0219
+    FILTER_REMIND = 0x0217
+    AUX_ELECTRIC_HEAT = 0x0219  # AKA PTC
     PRESET_TURBO = 0x021A
+    FILTER_CHECK = 0x0221
+    ANION = 0x021E
     HUMIDITY = 0x021F
-    UNIT_CHANGEABLE = 0x0222
-    LIGHT_CONTROL = 0x0224
+    FAHRENHEIT = 0x0222
+    DISPLAY_CONTROL = 0x0224
     TEMPERATURES = 0x0225
     BUZZER = 0x022C
+    MAIN_HORIZONTAL_GUIDE_STRIP = 0x0230  # ??
+    SUP_HORIZONTAL_GUIDE_STRIP = 0x0231  # ??
+    TWINS_MACHINE = 0x0232  # ??
+    GUIDE_STRIP_TYPE = 0x0233  # ??
+    BODY_CHECK = 0x0234  # ??
 
 
 class TemperatureType(IntEnum):
@@ -273,33 +293,40 @@ class CapabilitiesResponse(Response):
             CapabilityId.SMART_EYE:  reader("smart_eye", get_value(1)),
             CapabilityId.WIND_ON_ME:  reader("wind_on_me", get_value(1)),
             CapabilityId.WIND_OFF_ME:  reader("wind_off_me", get_value(1)),
-            CapabilityId.ACTIVE_CLEAN:  reader("active_clean", get_value(1)),
+            CapabilityId.SELF_CLEAN:  reader("self_clean", get_value(1)),
             CapabilityId.ONE_KEY_NO_WIND_ON_ME: reader("one_key_no_wind_on_me", get_value(1)),
             CapabilityId.BREEZE_CONTROL: reader("breeze_control", get_value(1)),
-            # Fan speed control always seems to return false, even if unit can
-            CapabilityId.FAN_SPEED_CONTROL: reader("fan_speed_control", lambda v: v != 1),
+            CapabilityId.FAN_SPEED_CONTROL: [
+                reader("fan_silent", get_value(6)),
+                reader("fan_low", lambda v: v in [3, 4, 5, 6, 7]),
+                reader("fan_medium", lambda v: v in [5, 6, 7]),
+                reader("fan_high", lambda v: v in [3, 4, 5, 6, 7]),
+                reader("fan_auto", lambda v: v in [4, 5, 6]),
+                reader("fan_custom", get_value(1)),
+            ],
             CapabilityId.PRESET_ECO: [
                 reader("eco_mode", get_value(1)),
                 reader("eco_mode_2", get_value(2)),
             ],
             CapabilityId.PRESET_FREEZE_PROTECTION: reader("freeze_protection", get_value(1)),
             CapabilityId.MODES: [
-                reader("heat_mode", lambda v: v == 1 or v == 2),
+                reader("heat_mode", lambda v: v in [1, 2, 4, 6, 7, 9]),
                 reader("cool_mode", lambda v: v != 2),
-                reader("dry_mode", lambda v: v < 2),
-                reader("auto_mode", lambda v: v < 3),
+                reader("dry_mode", lambda v: v in [0, 1, 5, 6, 9]),
+                reader("auto_mode", lambda v: v in [0, 1, 2, 7, 8, 9]),
             ],
             CapabilityId.SWING_MODES: [
                 reader("swing_horizontal", lambda v: v == 1 or v == 3),
                 reader("swing_vertical", lambda v: v < 2),
             ],
             CapabilityId.POWER: [
-                reader("power_cal", lambda v: v == 2 or v == 3),
-                reader("power_cal_setting", lambda v: v == 3),
+                reader("power_stats", lambda v: v in [2, 3, 4, 5]),
+                reader("power_setting", lambda v: v in [3, 5]),
+                reader("power_bcd", lambda v: v in [4, 5]),
             ],
-            CapabilityId.NEST: [
-                reader("nest_check", lambda v: v == 1 or v == 2 or v == 4),
-                reader("nest_need_change", lambda v: v == 3 or v == 4),
+            CapabilityId.FILTER_REMIND: [
+                reader("filter_notice", lambda v: v == 1 or v == 2 or v == 4),
+                reader("filter_clean", lambda v: v == 3 or v == 4),
             ],
             CapabilityId.AUX_ELECTRIC_HEAT: reader("aux_electric_heat", get_bool),
             CapabilityId.PRESET_TURBO:  [
@@ -311,8 +338,8 @@ class CapabilitiesResponse(Response):
                 reader("humidity_auto_set", lambda v: v == 1 or v == 2),
                 reader("humidity_manual_set", lambda v: v == 2 or v == 3),
             ],
-            CapabilityId.UNIT_CHANGEABLE: reader("unit_changeable", get_value(0)),
-            CapabilityId.LIGHT_CONTROL: reader("light_control", get_bool),
+            CapabilityId.FAHRENHEIT: reader("fahrenheit", get_value(0)),
+            CapabilityId.DISPLAY_CONTROL: reader("display_control", get_bool),
             # Temperatures capability too complex to be handled here
             CapabilityId.BUZZER:  reader("buzzer", get_bool),
         }
@@ -373,7 +400,9 @@ class CapabilitiesResponse(Response):
                 self._capabilities["heat_min_temperature"] = caps[7] * 0.5
                 self._capabilities["heat_max_temperature"] = caps[8] * 0.5
 
-                self._capabilities["decimals"] = caps[9] == 0 if size > 6 else caps[2] == 0
+                # TODO The else of this condition is commented out in reference code
+                self._capabilities["decimals"] = (
+                    caps[9] if size > 6 else caps[2]) != 0
 
             else:
                 _LOGGER.warning(
@@ -381,6 +410,37 @@ class CapabilitiesResponse(Response):
 
             # Advanced to next capability
             caps = caps[3+size:]
+
+    # TODO rethink these properties for fan speed, operation mode and swing mode
+    # Surely there's a better way than define props for each possible cap
+    @property
+    def fan_silent(self) -> bool:
+        # Assume that a fan capable of custom speeds is capable of any speed
+        return self._capabilities.get("fan_silent", False) or self._capabilities.get("fan_custom", False)
+
+    @property
+    def fan_low(self) -> bool:
+        # Assume that a fan capable of custom speeds is capable of any speed
+        return self._capabilities.get("fan_low", False) or self._capabilities.get("fan_custom", False)
+
+    @property
+    def fan_medium(self) -> bool:
+        # Assume that a fan capable of custom speeds is capable of any speed
+        return self._capabilities.get("fan_medium", False) or self._capabilities.get("fan_custom", False)
+
+    @property
+    def fan_high(self) -> bool:
+        # Assume that a fan capable of custom speeds is capable of any speed
+        return self._capabilities.get("fan_high", False) or self._capabilities.get("fan_custom", False)
+
+    @property
+    def fan_auto(self) -> bool:
+        # Assume that a fan capable of custom speeds is capable of any speed
+        return self._capabilities.get("fan_auto", False) or self._capabilities.get("fan_custom", False)
+
+    @property
+    def fan_custom(self) -> bool:
+        return self._capabilities.get("fan_custom", False)
 
     @property
     def swing_horizontal(self) -> bool:
@@ -419,8 +479,17 @@ class CapabilitiesResponse(Response):
         return self._capabilities.get("turbo_heat", False) or self._capabilities.get("turbo_cool", False)
 
     @property
+    def freeze_protection_mode(self) -> bool:
+        return self._capabilities.get("freeze_protection", False)
+
+    @property
     def display_control(self) -> bool:
-        return self._capabilities.get("light_control", False)
+        return self._capabilities.get("display_control", False)
+
+    @property
+    def filter_reminder(self) -> bool:
+        # TODO unsure of difference between filter_notice and filter_clean
+        return self._capabilities.get("filter_notice", False)
 
     @property
     def min_temperature(self) -> int:
@@ -431,10 +500,6 @@ class CapabilitiesResponse(Response):
     def max_temperature(self) -> int:
         mode = ["cool", "auto", "heat"]
         return max([self._capabilities.get(f"{m}_max_temperature", 30) for m in mode])
-
-    @property
-    def freeze_protection_mode(self) -> bool:
-        return self._capabilities.get("freeze_protection", False)
 
 
 class StateResponse(Response):

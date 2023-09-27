@@ -43,8 +43,7 @@ class AirConditioner(Device):
 
     class FanSpeed(IntEnumHelper):
         AUTO = 102
-        FULL = 100
-        HIGH = 80
+        HIGH = 100
         MEDIUM = 60
         LOW = 40
         SILENT = 20
@@ -116,10 +115,14 @@ class AirConditioner(Device):
             List[AirConditioner.OperationalMode], AirConditioner.OperationalMode.list())
         self._supported_swing_modes = cast(
             List[AirConditioner.SwingMode], AirConditioner.SwingMode.list())
+        self._supported_fan_speeds = cast(
+            List[AirConditioner.FanSpeed], AirConditioner.FanSpeed.list())
+        self._supports_custom_fan_speed = True
         self._supports_eco_mode = True
         self._supports_turbo_mode = True
         self._supports_freeze_protection_mode = True
         self._supports_display_control = True
+        self._supports_filter_reminder = True
         self._min_target_temperature = 16
         self._max_target_temperature = 30
 
@@ -135,8 +138,16 @@ class AirConditioner(Device):
         self._operational_mode = AirConditioner.OperationalMode.get_from_value(
             res.operational_mode)
 
-        self._fan_speed = AirConditioner.FanSpeed.get_from_value(
-            res.fan_speed)
+        if self._supports_custom_fan_speed:
+            # Attempt to fetch enum of fan speed, but fallback to raw int if custom
+            try:
+                self._fan_speed = AirConditioner.FanSpeed(
+                    cast(int, res.fan_speed))
+            except ValueError:
+                self._fan_speed = cast(int, res.fan_speed)
+        else:
+            self._fan_speed = AirConditioner.FanSpeed.get_from_value(
+                res.fan_speed)
 
         self._swing_mode = AirConditioner.SwingMode.get_from_value(
             res.swing_mode)
@@ -182,11 +193,28 @@ class AirConditioner(Device):
 
         self._supported_swing_modes = swing_modes
 
+       # Build list of supported fan speeds
+        fan_speeds = []
+        if res.fan_silent:
+            fan_speeds.append(AirConditioner.FanSpeed.SILENT)
+        if res.fan_low:
+            fan_speeds.append(AirConditioner.FanSpeed.LOW)
+        if res.fan_medium:
+            fan_speeds.append(AirConditioner.FanSpeed.MEDIUM)
+        if res.fan_high:
+            fan_speeds.append(AirConditioner.FanSpeed.HIGH)
+        if res.fan_auto:
+            fan_speeds.append(AirConditioner.FanSpeed.AUTO)
+
+        self._supported_fan_speeds = fan_speeds
+        self._supports_custom_fan_speed = res.fan_custom
+
         self._supports_eco_mode = res.eco_mode
         self._supports_turbo_mode = res.turbo_mode
         self._supports_freeze_protection_mode = res.freeze_protection_mode
 
         self._supports_display_control = res.display_control
+        self._supports_filter_reminder = res.filter_reminder
 
         self._min_target_temperature = res.min_temperature
         self._max_target_temperature = res.max_temperature
@@ -259,6 +287,11 @@ class AirConditioner(Device):
             if self._operational_mode not in self._supported_op_modes:
                 _LOGGER.warning(
                     "Device is not capable of operational mode %s.", self._operational_mode)
+
+            if (self._fan_speed not in self._supported_fan_speeds
+                    and not self._supports_custom_fan_speed):
+                _LOGGER.warning(
+                    "Device is not capable of fan speed %s.", self._fan_speed)
 
             if self._swing_mode not in self._supported_swing_modes:
                 _LOGGER.warning(
@@ -349,11 +382,19 @@ class AirConditioner(Device):
         self._operational_mode = mode
 
     @property
-    def fan_speed(self) -> FanSpeed:
+    def supported_fan_speeds(self) -> List[FanSpeed]:
+        return self._supported_fan_speeds
+
+    @property
+    def supports_custom_fan_speed(self) -> Optional[bool]:
+        return self._supports_custom_fan_speed
+
+    @property
+    def fan_speed(self) -> FanSpeed | int:
         return self._fan_speed
 
     @fan_speed.setter
-    def fan_speed(self, speed: FanSpeed) -> None:
+    def fan_speed(self, speed: FanSpeed | int) -> None:
         if self._updating:
             self._defer_update = True
         self._fan_speed = speed
@@ -461,6 +502,10 @@ class AirConditioner(Device):
     @property
     def supports_display_control(self) -> Optional[bool]:
         return self._supports_display_control
+
+    @property
+    def supports_filter_reminder(self) -> Optional[bool]:
+        return self._supports_filter_reminder
 
     def to_dict(self) -> dict:
         return {**super().to_dict(), **{
