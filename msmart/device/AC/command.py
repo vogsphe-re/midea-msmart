@@ -479,6 +479,10 @@ class CapabilitiesResponse(Response):
         return self._capabilities.get("turbo_heat", False) or self._capabilities.get("turbo_cool", False)
 
     @property
+    def freeze_protection_mode(self) -> bool:
+        return self._capabilities.get("freeze_protection", False)
+
+    @property
     def display_control(self) -> bool:
         return self._capabilities.get("display_control", False)
 
@@ -496,10 +500,6 @@ class CapabilitiesResponse(Response):
     def max_temperature(self) -> int:
         mode = ["cool", "auto", "heat"]
         return max([self._capabilities.get(f"{m}_max_temperature", 30) for m in mode])
-
-    @property
-    def freeze_protection_mode(self) -> bool:
-        return self._capabilities.get("freeze_protection", False)
 
 
 class StateResponse(Response):
