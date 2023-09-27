@@ -296,8 +296,14 @@ class CapabilitiesResponse(Response):
             CapabilityId.SELF_CLEAN:  reader("self_clean", get_value(1)),
             CapabilityId.ONE_KEY_NO_WIND_ON_ME: reader("one_key_no_wind_on_me", get_value(1)),
             CapabilityId.BREEZE_CONTROL: reader("breeze_control", get_value(1)),
-            # TODO Fan speed control is decoded via a map in the reference
-            CapabilityId.FAN_SPEED_CONTROL: reader("fan_speed_control", lambda v: v),
+            CapabilityId.FAN_SPEED_CONTROL: [
+                reader("fan_silent", get_value(6)),
+                reader("fan_low", lambda v: v in [3, 4, 5, 6, 7]),
+                reader("fan_medium", lambda v: v in [5, 6, 7]),
+                reader("fan_high", lambda v: v in [3, 4, 5, 6, 7]),
+                reader("fan_auto", lambda v: v in [4, 5, 6]),
+                reader("fan_custom", get_value(1)),
+            ],
             CapabilityId.PRESET_ECO: [
                 reader("eco_mode", get_value(1)),
                 reader("eco_mode_2", get_value(2)),
@@ -404,6 +410,37 @@ class CapabilitiesResponse(Response):
 
             # Advanced to next capability
             caps = caps[3+size:]
+
+    # TODO rethink these properties for fan speed, operation mode and swing mode
+    # Surely there's a better way than define props for each possible cap
+    @property
+    def fan_silent(self) -> bool:
+        # Assume that a fan capable of custom speeds is capable of any speed
+        return self._capabilities.get("fan_silent", False) or self._capabilities.get("fan_custom", False)
+
+    @property
+    def fan_low(self) -> bool:
+        # Assume that a fan capable of custom speeds is capable of any speed
+        return self._capabilities.get("fan_low", False) or self._capabilities.get("fan_custom", False)
+
+    @property
+    def fan_medium(self) -> bool:
+        # Assume that a fan capable of custom speeds is capable of any speed
+        return self._capabilities.get("fan_medium", False) or self._capabilities.get("fan_custom", False)
+
+    @property
+    def fan_high(self) -> bool:
+        # Assume that a fan capable of custom speeds is capable of any speed
+        return self._capabilities.get("fan_high", False) or self._capabilities.get("fan_custom", False)
+
+    @property
+    def fan_auto(self) -> bool:
+        # Assume that a fan capable of custom speeds is capable of any speed
+        return self._capabilities.get("fan_auto", False) or self._capabilities.get("fan_custom", False)
+
+    @property
+    def fan_custom(self) -> bool:
+        return self._capabilities.get("fan_custom", False)
 
     @property
     def swing_horizontal(self) -> bool:

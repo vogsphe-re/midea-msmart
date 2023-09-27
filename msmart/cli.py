@@ -76,6 +76,8 @@ async def _query(args) -> None:
         _LOGGER.info("%s", str({
             "supported_modes": device.supported_operation_modes,
             "supported_swing_modes": device.supported_swing_modes,
+            "supported_fan_speeds": device.supported_fan_speeds,
+            "supports_custom_fan_speed": device.supports_custom_fan_speed,
             "supports_eco_mode": device.supports_eco_mode,
             "supports_turbo_mode": device.supports_turbo_mode,
             "supports_freeze_protection_mode": device.supports_freeze_protection_mode,
