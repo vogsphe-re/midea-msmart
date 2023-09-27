@@ -144,7 +144,7 @@ class AirConditioner(Device):
                 self._fan_speed = AirConditioner.FanSpeed(
                     cast(int, res.fan_speed))
             except ValueError:
-                self._fan_speed = res.fan_speed
+                self._fan_speed = cast(int, res.fan_speed)
         else:
             self._fan_speed = AirConditioner.FanSpeed.get_from_value(
                 res.fan_speed)
@@ -390,11 +390,11 @@ class AirConditioner(Device):
         return self._supports_custom_fan_speed
 
     @property
-    def fan_speed(self) -> FanSpeed:
+    def fan_speed(self) -> FanSpeed | int:
         return self._fan_speed
 
     @fan_speed.setter
-    def fan_speed(self, speed: FanSpeed) -> None:
+    def fan_speed(self, speed: FanSpeed | int) -> None:
         if self._updating:
             self._defer_update = True
         self._fan_speed = speed
