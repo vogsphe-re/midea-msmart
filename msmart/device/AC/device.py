@@ -138,8 +138,16 @@ class AirConditioner(Device):
         self._operational_mode = AirConditioner.OperationalMode.get_from_value(
             res.operational_mode)
 
-        self._fan_speed = AirConditioner.FanSpeed.get_from_value(
-            res.fan_speed)
+        if self._supports_custom_fan_speed:
+            # Attempt to fetch enum of fan speed, but fallback to raw int if custom
+            try:
+                self._fan_speed = AirConditioner.FanSpeed(
+                    cast(int, res.fan_speed))
+            except ValueError:
+                self._fan_speed = res.fan_speed
+        else:
+            self._fan_speed = AirConditioner.FanSpeed.get_from_value(
+                res.fan_speed)
 
         self._swing_mode = AirConditioner.SwingMode.get_from_value(
             res.swing_mode)
@@ -279,6 +287,11 @@ class AirConditioner(Device):
             if self._operational_mode not in self._supported_op_modes:
                 _LOGGER.warning(
                     "Device is not capable of operational mode %s.", self._operational_mode)
+
+            if (self._fan_speed not in self._supported_fan_speeds
+                    and not self._supports_custom_fan_speed):
+                _LOGGER.warning(
+                    "Device is not capable of fan speed %s.", self._fan_speed)
 
             if self._swing_mode not in self._supported_swing_modes:
                 _LOGGER.warning(
