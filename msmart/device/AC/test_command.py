@@ -95,9 +95,11 @@ class TestCapabilitiesResponse(_TestResponseBase):
 
     # Properties expected in capabilities responses
     EXPECTED_PROPERTIES = ["swing_horizontal", "swing_vertical", "swing_both",
+                           "fan_silent", "fan_low", "fan_medium", "fan_high", "fan_auto", "fan_custom",
                            "dry_mode", "cool_mode", "heat_mode", "auto_mode",
-                           "eco_mode", "turbo_mode", "display_control",
-                           "min_temperature", "max_temperature", "freeze_protection_mode"]
+                           "eco_mode", "turbo_mode", "freeze_protection_mode",
+                           "min_temperature", "max_temperature",
+                           "display_control", "filter_reminder"]
 
     def test_properties(self) -> None:
         """Test that the capabilities response has the expected properties."""
@@ -136,14 +138,6 @@ class TestCapabilitiesResponse(_TestResponseBase):
             CapabilityId.SILKY_COOL, 1)._capabilities["silky_cool"], True)
         self.assertEqual(_build_capability_response(
             CapabilityId.SILKY_COOL, 100)._capabilities["silky_cool"], False)
-
-        # Test FAN_SPEED_CONTROL capability which gets a raw value
-        self.assertEqual(_build_capability_response(
-            CapabilityId.FAN_SPEED_CONTROL, 0)._capabilities["fan_speed_control"], 0)
-        self.assertEqual(_build_capability_response(
-            CapabilityId.FAN_SPEED_CONTROL, 1)._capabilities["fan_speed_control"], 1)
-        self.assertEqual(_build_capability_response(
-            CapabilityId.FAN_SPEED_CONTROL, 100)._capabilities["fan_speed_control"], 100)
 
         # Test PRESET_ECO capability which uses 2 get_value parsers.
         # e.g. eco_mode -> X == 1, eco_mode2 -> X == 2
@@ -201,14 +195,17 @@ class TestCapabilitiesResponse(_TestResponseBase):
 
         EXPECTED_CAPABILITIES = {
             "swing_horizontal": True, "swing_vertical": True, "swing_both": True,
-            "dry_mode": True, "heat_mode": True, "cool_mode": True,
-            "auto_mode": True, "eco_mode": True, "turbo_mode": True,
-            "freeze_protection_mode": True, "display_control": False,
-            "min_temperature": 16, "max_temperature": 30
+            "dry_mode": True, "heat_mode": True, "cool_mode": True, "auto_mode": True,
+            "eco_mode": True, "turbo_mode": True, "freeze_protection_mode": True,
+            "fan_custom": False, "fan_silent": False, "fan_low": False,
+            "fan_medium": False,  "fan_high": False, "fan_auto": False,
+            "min_temperature": 16, "max_temperature": 30,
+            "display_control": False, "filter_reminder": False
         }
         # Check capabilities properties match
         for prop in self.EXPECTED_PROPERTIES:
-            self.assertEqual(getattr(resp, prop), EXPECTED_CAPABILITIES[prop])
+            self.assertEqual(getattr(resp, prop),
+                             EXPECTED_CAPABILITIES[prop], prop)
 
     def test_capabilities_2(self) -> None:
         """Test that we decode capabilities responses as expected."""
@@ -232,25 +229,30 @@ class TestCapabilitiesResponse(_TestResponseBase):
             "auto_mode": True, "swing_horizontal": True, "swing_vertical": True,
             "power_stats": False, "power_setting": False, "power_bcd": False,
             "turbo_heat": True, "turbo_cool": True,
-            "fan_speed_control": 1, "humidity_auto_set": False,
-            "humidity_manual_set": False, "cool_min_temperature": 16.0,
-            "cool_max_temperature": 30.0, "auto_min_temperature": 16.0,
-            "auto_max_temperature": 30.0, "heat_min_temperature": 16.0,
-            "heat_max_temperature": 30.0, "decimals": False
+            "fan_custom": True, "fan_silent": False, "fan_low": False,
+            "fan_medium": False,  "fan_high": False, "fan_auto": False,
+            "humidity_auto_set": False, "humidity_manual_set": False,
+            "cool_min_temperature": 16.0, "cool_max_temperature": 30.0,
+            "auto_min_temperature": 16.0, "auto_max_temperature": 30.0,
+            "heat_min_temperature": 16.0, "heat_max_temperature": 30.0,
+            "decimals": False
         }
         # Ensure raw decoded capabilities match
         self.assertEqual(resp._capabilities, EXPECTED_RAW_CAPABILITIES)
 
         EXPECTED_CAPABILITIES = {
             "swing_horizontal": True, "swing_vertical": True, "swing_both": True,
-            "dry_mode": True, "heat_mode": True, "cool_mode": True,
-            "auto_mode": True, "eco_mode": True, "turbo_mode": True,
-            "freeze_protection_mode": False, "display_control": False,
-            "min_temperature": 16, "max_temperature": 30
+            "dry_mode": True, "heat_mode": True, "cool_mode": True, "auto_mode": True,
+            "eco_mode": True, "turbo_mode": True, "freeze_protection_mode": False,
+            "fan_custom": True, "fan_silent": True, "fan_low": True,
+            "fan_medium": True,  "fan_high": True, "fan_auto": True,
+            "min_temperature": 16, "max_temperature": 30,
+            "display_control": False, "filter_reminder": False
         }
         # Check capabilities properties match
         for prop in self.EXPECTED_PROPERTIES:
-            self.assertEqual(getattr(resp, prop), EXPECTED_CAPABILITIES[prop])
+            self.assertEqual(getattr(resp, prop),
+                             EXPECTED_CAPABILITIES[prop], prop)
 
     def test_capabilities_3(self) -> None:
         """Test that we decode capabilities responses as expected."""
@@ -265,21 +267,27 @@ class TestCapabilitiesResponse(_TestResponseBase):
             "cool_mode": True, "dry_mode": True, "auto_mode": True,
             "swing_horizontal": False, "swing_vertical": False,
             "filter_notice": True, "filter_clean": False, "turbo_heat": False,
-            "turbo_cool": False, "fan_speed_control": 5, "display_control": True
+            "turbo_cool": False,
+            "fan_custom": False, "fan_silent": False, "fan_low": True,
+            "fan_medium": True,  "fan_high": True, "fan_auto": True,
+            "display_control": True
         }
         # Ensure raw decoded capabilities match
         self.assertEqual(resp._capabilities, EXPECTED_RAW_CAPABILITIES)
 
         EXPECTED_CAPABILITIES = {
             "swing_horizontal": False, "swing_vertical": False, "swing_both": False,
-            "dry_mode": True, "heat_mode": False, "cool_mode": True,
-            "auto_mode": True, "eco_mode": True, "turbo_mode": False,
-            "freeze_protection_mode": False, "display_control": True,
-            "min_temperature": 16, "max_temperature": 30
+            "dry_mode": True, "heat_mode": False, "cool_mode": True, "auto_mode": True,
+            "eco_mode": True, "turbo_mode": False, "freeze_protection_mode": False,
+            "fan_custom": False, "fan_silent": False, "fan_low": True,
+            "fan_medium": True,  "fan_high": True, "fan_auto": True,
+            "min_temperature": 16, "max_temperature": 30,
+            "display_control": True, "filter_reminder": True
         }
         # Check capabilities properties match
         for prop in self.EXPECTED_PROPERTIES:
-            self.assertEqual(getattr(resp, prop), EXPECTED_CAPABILITIES[prop])
+            self.assertEqual(getattr(resp, prop),
+                             EXPECTED_CAPABILITIES[prop], prop)
 
     def test_capabilities_4(self) -> None:
         """Test that we decode capabilities responses as expected."""
@@ -294,7 +302,8 @@ class TestCapabilitiesResponse(_TestResponseBase):
             "heat_mode": False, "cool_mode": True, "dry_mode": True, "auto_mode": True,
             "swing_horizontal": False, "swing_vertical": True, "filter_notice": True,
             "filter_clean": False, "turbo_heat": False, "turbo_cool": True,
-            "fan_speed_control": 1,
+            "fan_custom": True, "fan_silent": False, "fan_low": False,
+            "fan_medium": False,  "fan_high": False, "fan_auto": False,
             "cool_min_temperature": 16.0, "cool_max_temperature": 30.0,
             "auto_min_temperature": 16.0, "auto_max_temperature": 30.0,
             "heat_min_temperature": 16.0, "heat_max_temperature": 30.0,
@@ -305,14 +314,17 @@ class TestCapabilitiesResponse(_TestResponseBase):
 
         EXPECTED_CAPABILITIES = {
             "swing_horizontal": False, "swing_vertical": True, "swing_both": False,
-            "dry_mode": True, "heat_mode": False, "cool_mode": True,
-            "auto_mode": True, "eco_mode": True, "turbo_mode": True,
-            "freeze_protection_mode": False, "display_control": True,
-            "min_temperature": 16, "max_temperature": 30
+            "dry_mode": True, "heat_mode": False, "cool_mode": True, "auto_mode": True,
+            "eco_mode": True, "turbo_mode": True, "freeze_protection_mode": False,
+            "fan_custom": True, "fan_silent": True, "fan_low": True,
+            "fan_medium": True,  "fan_high": True, "fan_auto": True,
+            "min_temperature": 16, "max_temperature": 30,
+            "display_control": True, "filter_reminder": True
         }
         # Check capabilities properties match
         for prop in self.EXPECTED_PROPERTIES:
-            self.assertEqual(getattr(resp, prop), EXPECTED_CAPABILITIES[prop])
+            self.assertEqual(getattr(resp, prop),
+                             EXPECTED_CAPABILITIES[prop], prop)
 
 
 if __name__ == "__main__":
