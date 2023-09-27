@@ -122,6 +122,7 @@ class AirConditioner(Device):
         self._supports_turbo_mode = True
         self._supports_freeze_protection_mode = True
         self._supports_display_control = True
+        self._supports_filter_reminder = True
         self._min_target_temperature = 16
         self._max_target_temperature = 30
 
@@ -205,6 +206,7 @@ class AirConditioner(Device):
         self._supports_freeze_protection_mode = res.freeze_protection_mode
 
         self._supports_display_control = res.display_control
+        self._supports_filter_reminder = res.filter_reminder
 
         self._min_target_temperature = res.min_temperature
         self._max_target_temperature = res.max_temperature
@@ -487,6 +489,10 @@ class AirConditioner(Device):
     @property
     def supports_display_control(self) -> Optional[bool]:
         return self._supports_display_control
+
+    @property
+    def supports_filter_reminder(self) -> Optional[bool]:
+        return self._supports_filter_reminder
 
     def to_dict(self) -> dict:
         return {**super().to_dict(), **{

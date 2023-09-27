@@ -483,6 +483,11 @@ class CapabilitiesResponse(Response):
         return self._capabilities.get("display_control", False)
 
     @property
+    def filter_reminder(self) -> bool:
+        # TODO unsure of difference between filter_notice and filter_clean
+        return self._capabilities.get("filter_notice", False)
+
+    @property
     def min_temperature(self) -> int:
         mode = ["cool", "auto", "heat"]
         return min([self._capabilities.get(f"{m}_min_temperature", 16) for m in mode])

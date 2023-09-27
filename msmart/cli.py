@@ -82,6 +82,7 @@ async def _query(args) -> None:
             "supports_turbo_mode": device.supports_turbo_mode,
             "supports_freeze_protection_mode": device.supports_freeze_protection_mode,
             "supports_display_control": device.supports_display_control,
+            "supports_filter_reminder": device.supports_filter_reminder,
             "max_target_temperature": device.max_target_temperature,
             "min_target_temperature": device.min_target_temperature,
         }))
