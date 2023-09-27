@@ -94,7 +94,7 @@ async def _query(args) -> None:
         _LOGGER.info("%s", device)
 
 
-async def _download_protocol(args) -> None:
+async def _download(args) -> None:
     """Download a device's protocol implementation from the cloud."""
 
     # Use discovery to to find device information
@@ -123,11 +123,18 @@ async def _download_protocol(args) -> None:
         exit(1)
 
     _LOGGER.info("Downloading protocol from cloud.")
-    file_name, lua_file = await cloud.get_protocol_lua(device.type, device.sn)
+    lua_name, lua_file = await cloud.get_protocol_lua(device.type, device.sn)
 
-    _LOGGER.info("Writing protocol to '%s'.", file_name)
-    with open(file_name, "w") as f:
+    _LOGGER.info("Writing protocol to '%s'.", lua_name)
+    with open(lua_name, "w") as f:
         f.write(lua_file)
+
+    _LOGGER.info("Downloading plugin from cloud.")
+    plugin_name, plugin_file = await cloud.get_plugin(device.type, device.sn)
+
+    _LOGGER.info("Writing plugin to '%s'.", plugin_name)
+    with open(plugin_name, "wb") as f:
+        f.write(plugin_file)
 
 
 def _run(args) -> NoReturn:
@@ -222,11 +229,11 @@ def main() -> NoReturn:
 
     # Setup download parser
     download = subparsers.add_parser("download",
-                                     description="Download a device's protocol implementation from the cloud.",
+                                     description="Download a device's plugin and protocol implementation from the cloud.",
                                      parents=[common_parser])
     download.add_argument("host",
                           help="Hostname or IP address of device.")
-    download.set_defaults(func=_download_protocol)
+    download.set_defaults(func=_download)
 
     # Run with args
     _run(parser.parse_args())

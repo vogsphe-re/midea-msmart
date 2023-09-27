@@ -262,6 +262,42 @@ class Cloud:
             encrypted_data).decode("UTF-8")
         return (file_name, file_data)
 
+    async def get_plugin(self, device_type: DeviceType, sn: str) -> Tuple[str, bytes]:
+        """Request and download the device plugin."""
+
+        response = await self._api_request(
+            "/v1/plugin/update/overseas/get",
+            self._build_request_body({
+                "clientVersion": "0",
+                "uid": token_hex(16),
+                "applianceList": [
+                    {
+                        "appModel": sn[9:17],
+                        "appType": hex(device_type),
+                        "modelNumber": "0"
+                    }
+                ]
+            })
+        )
+
+        # Assert response is not None since we should throw on errors
+        assert response is not None
+
+        result = response["result"][0]
+
+        file_name = result["title"]
+        url = result["url"]
+        async with httpx.AsyncClient(verify=False) as client:
+            try:
+                # Get file from server
+                r = await client.get(url, timeout=10.0)
+                r.raise_for_status()
+            except httpx.TimeoutException as e:
+                raise CloudError("No response from server.") from e
+
+        file_data = r.content
+        return (file_name, file_data)
+
 
 class _Security:
     """"Class for Midea cloud specific security."""
