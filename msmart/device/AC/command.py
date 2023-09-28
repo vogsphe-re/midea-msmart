@@ -114,11 +114,23 @@ class SetStateCommand(Command):
         beep = 0x40 if self.beep_on else 0
         power = 0x1 if self.power_on else 0
 
-        # Build target temp and mode byte
-        fractional, integral = math.modf(self.target_temperature)
-        temperature2 = (int(integral) - 12) & 0x1F
-        temperature = (int(integral) - 16) if integral > 16 else 1
-        temperature = (temperature & 0xF) | (0x10 if fractional > 0 else 0)
+        # Get integer and fraction components of target temp
+        fractional_temp, integral_temp = math.modf(self.target_temperature)
+        integral_temp = int(integral_temp)
+
+        if 17 <= integral_temp <= 30:
+            # Use primary method
+            temperature = (integral_temp - 16) & 0xF
+            temperature_alt = 0
+        else:
+            # Out of range, use alternate method
+            # TODO additional range possible according to Lua code
+            temperature = 0
+            temperature_alt = (integral_temp - 12) & 0x1F
+
+        # Set half degree bit
+        temperature |= 0x10 if (fractional_temp > 0) else 0
+
         mode = (self.operational_mode & 0x7) << 5
 
         # Build swing mode byte
@@ -143,7 +155,7 @@ class SetStateCommand(Command):
             0x40,
             # Beep and power state
             self.CONTROL_SOURCE | beep | power,
-            # Temperature part 1 and operational mode
+            # Temperature and operational mode
             temperature | mode,
             # Fan speed
             self.fan_speed,
@@ -160,8 +172,8 @@ class SetStateCommand(Command):
             # Unknown
             0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00,
-            # Temperature part 2
-            temperature2,
+            # Alternate temperature
+            temperature_alt,
             # Unknown
             0x00, 0x00,
             # Frost/freeze protection
@@ -473,11 +485,7 @@ class StateResponse(Response):
         # self.appliance_error = (payload[1] & 0x80) > 0
 
         # Unpack target temp and mode byte
-        self.target_temperature = payload[13] & 0x1F
-        if self.target_temperature != 0:
-            self.target_temperature += 12
-        else:
-            self.target_temperature = (payload[2] & 0xF) + 16.0
+        self.target_temperature = (payload[2] & 0xF) + 16.0
         self.target_temperature += 0.5 if payload[2] & 0x10 else 0.0
         self.operational_mode = (payload[2] >> 5) & 0x7
 
@@ -534,7 +542,12 @@ class StateResponse(Response):
         self.indoor_temperature = decode_temp(payload[11])
         self.outdoor_temperature = decode_temp(payload[12])
 
-        # self.humidity = (payload[13] & 0x7F)
+        # Decode alternate target temperature
+        target_temperature_alt = payload[13] & 0x1F
+        if target_temperature_alt != 0:
+            # TODO additional range possible according to Lua code
+            self.target_temperature = target_temperature_alt + 12
+            self.target_temperature += 0.5 if payload[2] & 0x10 else 0.0
 
         self.filter_alert = bool(payload[13] & 0x20)
 
