@@ -137,7 +137,7 @@ class Discover:
 
     _account = OPEN_MIDEA_APP_ACCOUNT
     _password = OPEN_MIDEA_APP_PASSWORD
-    _lock = asyncio.Lock()
+    _lock = None
     _cloud = None
     _auto_connect = False
 
@@ -154,6 +154,10 @@ class Discover:
         auto_connect=True
     ) -> List[Device]:
         """Discover devices via broadcast."""
+
+        # Create lock if nonexistent within the context of the current loop
+        if cls._lock is None:
+            cls._lock = asyncio.Lock()
 
         # Always use a new cloud connection
         cls._cloud = None
