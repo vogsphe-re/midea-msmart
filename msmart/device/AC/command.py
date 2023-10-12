@@ -134,9 +134,23 @@ class SetStateCommand(Command):
         beep = 0x40 if self.beep_on else 0
         power = 0x1 if self.power_on else 0
 
-        # Build target temp and mode byte
-        fractional, integral = math.modf(self.target_temperature)
-        temperature = (int(integral) & 0xF) | (0x10 if fractional > 0 else 0)
+        # Get integer and fraction components of target temp
+        fractional_temp, integral_temp = math.modf(self.target_temperature)
+        integral_temp = int(integral_temp)
+
+        if 17 <= integral_temp <= 30:
+            # Use primary method
+            temperature = (integral_temp - 16) & 0xF
+            temperature_alt = 0
+        else:
+            # Out of range, use alternate method
+            # TODO additional range possible according to Lua code
+            temperature = 0
+            temperature_alt = (integral_temp - 12) & 0x1F
+
+        # Set half degree bit
+        temperature |= 0x10 if (fractional_temp > 0) else 0
+
         mode = (self.operational_mode & 0x7) << 5
 
         # Build swing mode byte
@@ -177,7 +191,10 @@ class SetStateCommand(Command):
             sleep | turbo | fahrenheit,
             # Unknown
             0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00,
+            # Alternate temperature
+            temperature_alt,
+            # Unknown
             0x00, 0x00,
             # Frost/freeze protection
             freeze_protect,
@@ -590,7 +607,12 @@ class StateResponse(Response):
         self.indoor_temperature = decode_temp(payload[11])
         self.outdoor_temperature = decode_temp(payload[12])
 
-        # self.humidity = (payload[13] & 0x7F)
+        # Decode alternate target temperature
+        target_temperature_alt = payload[13] & 0x1F
+        if target_temperature_alt != 0:
+            # TODO additional range possible according to Lua code
+            self.target_temperature = target_temperature_alt + 12
+            self.target_temperature += 0.5 if payload[2] & 0x10 else 0.0
 
         self.filter_alert = bool(payload[13] & 0x20)
 

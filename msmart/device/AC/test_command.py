@@ -89,6 +89,42 @@ class TestStateResponse(_TestResponseBase):
         self.assertEqual(resp.indoor_temperature, 21.0)
         self.assertEqual(resp.outdoor_temperature, 28.5)
 
+    def test_target_temperature(self) -> None:
+        """Test decoding of target temperature from a variety of state responses."""
+        TEST_PAYLOADS = {
+            # https://github.com/mill1000/midea-ac-py/issues/39#issuecomment-1729884851
+            # Corrected target values from user reported values
+            16.0: bytes.fromhex("c00181667f7f003c00000060560400420000000000000048"),
+            16.5: bytes.fromhex("c00191667f7f003c00000060560400440000000000000049"),
+            17.0: bytes.fromhex("c00181667f7f003c0000006156050036000000000000004a"),
+            17.5: bytes.fromhex("c00191667f7f003c0000006156050028000000000000004b"),
+            18.0: bytes.fromhex("c00182667f7f003c0000006156060028000000000000004c"),
+            18.5: bytes.fromhex("c00192667f7f003c0000006156060028000000000000004d"),
+            19.0: bytes.fromhex("c00183667f7f003c0000006156070028000000000000004e"),
+            19.5: bytes.fromhex("c00193667f7f003c00000061570700550000000000000050"),
+
+            # Midea U-Shaped
+            16.0: bytes.fromhex("c00040660000003c00000062680400000000000000000004"),
+            16.5: bytes.fromhex("c00050660000003c00000062670400000000000000000004"),
+        }
+
+        for target, payload in TEST_PAYLOADS.items():
+            # Create response
+            with memoryview(payload) as mv_payload:
+                resp = StateResponse(mv_payload)
+
+            # Assert that it exists
+            self.assertIsNotNone(resp)
+
+            # Assert response is a state response
+            self.assertEqual(type(resp), StateResponse)
+
+            # Suppress type errors
+            resp = cast(StateResponse, resp)
+
+            # Assert that expected target temperature matches
+            self.assertEqual(resp.target_temperature, target)
+
 
 class TestCapabilitiesResponse(_TestResponseBase):
     """Test device capabilities response messages."""
