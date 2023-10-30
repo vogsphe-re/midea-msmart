@@ -108,6 +108,7 @@ class AirConditioner(Device):
         self._fahrenheit_unit = False  # Display temperature in Fahrenheit
         self._display_on = False
         self._filter_alert = False
+        self._follow_me = False
 
         # Support all known modes initially
         self._supported_op_modes = cast(
@@ -163,6 +164,8 @@ class AirConditioner(Device):
         self._fahrenheit_unit = res.fahrenheit
 
         self._filter_alert = res.filter_alert
+
+        self._follow_me = res.follow_me
 
         # self._on_timer = res.on_timer
         # self._off_timer = res.off_timer
@@ -319,6 +322,7 @@ class AirConditioner(Device):
                 self._freeze_protection_mode, False)
             cmd.sleep_mode = or_default(self._sleep_mode, False)
             cmd.fahrenheit = or_default(self._fahrenheit_unit, False)
+            cmd.follow_me = or_default(self._follow_me, False)
 
             await self._send_command(cmd, self._defer_update)
         finally:
@@ -477,6 +481,16 @@ class AirConditioner(Device):
         self._fahrenheit_unit = enabled
 
     @property
+    def follow_me(self) -> Optional[bool]:
+        return self._follow_me
+
+    @follow_me.setter
+    def follow_me(self, enabled: bool) -> None:
+        if self._updating:
+            self._defer_update = True
+        self._follow_me = enabled
+
+    @property
     def display_on(self) -> Optional[bool]:
         return self._display_on
 
@@ -521,6 +535,7 @@ class AirConditioner(Device):
             "turbo": self.turbo_mode,
             "freeze_protection": self.freeze_protection_mode,
             "sleep": self.sleep_mode,
+            "follow_me": self.follow_me,
             "display_on": self.display_on,
             "beep": self.beep,
             "fahrenheit": self.fahrenheit,

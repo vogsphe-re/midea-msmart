@@ -127,6 +127,7 @@ class SetStateCommand(Command):
         self.fahrenheit = True
         self.sleep_mode = False
         self.freeze_protection_mode = False
+        self.follow_me = False
 
     @property
     def payload(self) -> bytes:
@@ -166,6 +167,7 @@ class SetStateCommand(Command):
 
         # Build alternate turbo byte
         turbo_alt = 0x20 if self.turbo_mode else 0
+        follow_me = 0x80 if self.follow_me else 0
 
         # Build alternate turbo byte
         freeze_protect = 0x80 if self.freeze_protection_mode else 0
@@ -183,8 +185,8 @@ class SetStateCommand(Command):
             0x7F, 0x7F, 0x00,
             # Swing mode
             swing_mode,
-            # Alternate turbo mode
-            turbo_alt,
+            # Follow me amd alternate turbo mode
+            follow_me | turbo_alt,
             # ECO mode
             eco_mode,
             # Sleep mode, turbo mode and fahrenheit
@@ -537,6 +539,7 @@ class StateResponse(Response):
         self.filter_alert = None
         self.display_on = None
         self.freeze_protection_mode = None
+        self.follow_me = None
 
         _LOGGER.debug("State response payload: %s", payload.hex())
 
@@ -582,7 +585,7 @@ class StateResponse(Response):
         # self.save = (payload[8] & 0x08) > 0
         # self.low_frequency_fan = (payload[8] & 0x10) > 0
         self.turbo_mode = bool(payload[8] & 0x20)
-        # self.feel_own = (payload[8] & 0x80) > 0
+        self.follow_me = bool(payload[8] & 0x80)
 
         self.eco_mode = bool(payload[9] & 0x10)
         # self.child_sleep_mode = (payload[9] & 0x01) > 0
