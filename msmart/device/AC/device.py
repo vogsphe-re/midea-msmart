@@ -8,9 +8,8 @@ from msmart.base_device import Device
 from msmart.const import DeviceType
 
 from .command import (CapabilitiesResponse, GetCapabilitiesCommand,
-                      GetStateCommand, InvalidResponseException)
-from .command import Response as base_response
-from .command import (ResponseId, SetStateCommand, StateResponse,
+                      GetStateCommand, InvalidResponseException, Response,
+                      ResponseId, SetStateCommand, StateResponse,
                       ToggleDisplayCommand)
 
 _LOGGER = logging.getLogger(__name__)
@@ -91,9 +90,6 @@ class AirConditioner(Device):
 
         super().__init__(ip=ip, port=port, device_id=device_id,
                          device_type=DeviceType.AIR_CONDITIONER, **kwargs)
-
-        self._updating = False
-        self._defer_update = False
 
         self._beep_on = False
         self._power_state = False
@@ -221,113 +217,155 @@ class AirConditioner(Device):
         self._min_target_temperature = res.min_temperature
         self._max_target_temperature = res.max_temperature
 
-    def _process_response(self, data) -> None:
-        # Construct response from data
-        try:
-            response = base_response.construct(data)
-        except InvalidResponseException as e:
-            _LOGGER.error(e)
-            return
-
-        # Device is supported if we can process a response
-        self._supported = True
+    def _process_state_response(self, response: Response) -> None:
+        """Update the local state from a device state response."""
 
         if response.id == ResponseId.STATE:
             response = cast(StateResponse, response)
             self._update_state(response)
-        elif response.id == ResponseId.CAPABILITIES:
-            response = cast(CapabilitiesResponse, response)
-            self._update_capabilities(response)
         else:
             _LOGGER.debug("Ignored unknown response from %s:%d: %s",
                           self.ip, self.port, response.payload.hex())
 
-    async def _send_command(self, command, ignore_response=False) -> None:
-        responses = await super()._send_command(command)
+    async def _send_command_get_responses(self, command) -> List[Response]:
+        """Send a command and yield an iterator of valid response."""
 
-        # Ignore responses if requested
-        if ignore_response:
-            return
+        responses = await super()._send_command(command)
 
         # No response from device
         if responses is None:
             self._online = False
-            return
+            return []
 
         # Device is online if we received any response
         self._online = True
 
-        for response in responses:
-            self._process_response(response)
+        valid_responses = []
+        for data in responses:
+            try:
+                # Construct response from data
+                response = Response.construct(data)
+            except InvalidResponseException as e:
+                _LOGGER.error(e)
+                continue
+
+            # Device is supported if we can process a response
+            self._supported = True
+
+            valid_responses.append(response)
+
+        return valid_responses
+
+    async def _send_command_get_reponse_with_id(self, command, response_id: ResponseId) -> Optional[Response]:
+        """Send a command and return the first response with a matching ID."""
+        for response in await self._send_command_get_responses(command):
+            if response.id == response_id:
+                return response
+
+            _LOGGER.debug("Ignored response with ID %d from %s:%d: %s",
+                          response.id, self.ip, self.port, response.payload.hex())
+
+        return None
 
     async def get_capabilities(self) -> None:
+        """Fetch the device capabilities."""
+
+        # Send capabilities request and get a response
         cmd = GetCapabilitiesCommand()
-        await self._send_command(cmd)
+        response = await self._send_command_get_reponse_with_id(cmd, ResponseId.CAPABILITIES)
+        response = cast(CapabilitiesResponse, response)
+
+        if response is None:
+            _LOGGER.error("Failed to query device capabilities.")
+            return
+
+        # Send 2nd capabilities request if needed
+        if response.additional_capabilities:
+            cmd = GetCapabilitiesCommand(True)
+            additional_response = await self._send_command_get_reponse_with_id(cmd, ResponseId.CAPABILITIES)
+            additional_response = cast(
+                CapabilitiesResponse, additional_response)
+
+            if additional_response:
+                # Merge additional capabilities
+                response.merge(additional_response)
+            else:
+                _LOGGER.warning(
+                    "Failed to query additional device capabilities.")
+
+        # Update device capabilities
+        self._update_capabilities(response)
 
     async def toggle_display(self) -> None:
+        """Toggle the device display if the device supports it."""
+
         if not self._supports_display_control:
             _LOGGER.warning("Device is not capable of display control.")
 
         cmd = ToggleDisplayCommand()
         cmd.beep_on = self._beep_on
-        await self._send_command(cmd, True)
+        # Send the command and ignore all responses
+        await self._send_command_get_responses(cmd)
 
         # Force a refresh to get the updated display state
         await self.refresh()
 
-    async def refresh(self):
+    async def refresh(self) -> None:
+        """Refresh the local copy of the device state by sending a GetState command."""
+
         cmd = GetStateCommand()
-        await self._send_command(cmd)
+        # Process any state responses from the device
+        for response in await self._send_command_get_responses(cmd):
+            self._process_state_response(response)
 
     async def apply(self) -> None:
-        self._updating = True
-        try:
-            # Warn if trying to apply unsupported modes
-            if self._operational_mode not in self._supported_op_modes:
-                _LOGGER.warning(
-                    "Device is not capable of operational mode %s.", self._operational_mode)
+        """Apply the local state to the device."""
 
-            if (self._fan_speed not in self._supported_fan_speeds
-                    and not self._supports_custom_fan_speed):
-                _LOGGER.warning(
-                    "Device is not capable of fan speed %s.", self._fan_speed)
+        # Warn if trying to apply unsupported modes
+        if self._operational_mode not in self._supported_op_modes:
+            _LOGGER.warning(
+                "Device is not capable of operational mode %s.", self._operational_mode)
 
-            if self._swing_mode not in self._supported_swing_modes:
-                _LOGGER.warning(
-                    "Device is not capable of swing mode %s.", self._swing_mode)
+        if (self._fan_speed not in self._supported_fan_speeds
+                and not self._supports_custom_fan_speed):
+            _LOGGER.warning(
+                "Device is not capable of fan speed %s.", self._fan_speed)
 
-            if self._turbo_mode and not self._supports_turbo_mode:
-                _LOGGER.warning("Device is not capable of turbo mode.")
+        if self._swing_mode not in self._supported_swing_modes:
+            _LOGGER.warning(
+                "Device is not capable of swing mode %s.", self._swing_mode)
 
-            if self._eco_mode and not self._supports_eco_mode:
-                _LOGGER.warning("Device is not capable of eco mode.")
+        if self._turbo_mode and not self._supports_turbo_mode:
+            _LOGGER.warning("Device is not capable of turbo mode.")
 
-            if self._freeze_protection_mode and not self._supports_freeze_protection_mode:
-                _LOGGER.warning("Device is not capable of freeze protection.")
+        if self._eco_mode and not self._supports_eco_mode:
+            _LOGGER.warning("Device is not capable of eco mode.")
 
-            # Define function to return value or a default if value is None
-            def or_default(v, d) -> Any: return v if v is not None else d
+        if self._freeze_protection_mode and not self._supports_freeze_protection_mode:
+            _LOGGER.warning("Device is not capable of freeze protection.")
 
-            cmd = SetStateCommand()
-            cmd.beep_on = self._beep_on
-            cmd.power_on = or_default(self._power_state, False)
-            cmd.target_temperature = or_default(
-                self._target_temperature, 25)  # TODO?
-            cmd.operational_mode = self._operational_mode
-            cmd.fan_speed = self._fan_speed
-            cmd.swing_mode = self._swing_mode
-            cmd.eco_mode = or_default(self._eco_mode, False)
-            cmd.turbo_mode = or_default(self._turbo_mode, False)
-            cmd.freeze_protection_mode = or_default(
-                self._freeze_protection_mode, False)
-            cmd.sleep_mode = or_default(self._sleep_mode, False)
-            cmd.fahrenheit = or_default(self._fahrenheit_unit, False)
-            cmd.follow_me = or_default(self._follow_me, False)
+        # Define function to return value or a default if value is None
+        def or_default(v, d) -> Any: return v if v is not None else d
 
-            await self._send_command(cmd, self._defer_update)
-        finally:
-            self._updating = False
-            self._defer_update = False
+        cmd = SetStateCommand()
+        cmd.beep_on = self._beep_on
+        cmd.power_on = or_default(self._power_state, False)
+        cmd.target_temperature = or_default(
+            self._target_temperature, 25)  # TODO?
+        cmd.operational_mode = self._operational_mode
+        cmd.fan_speed = self._fan_speed
+        cmd.swing_mode = self._swing_mode
+        cmd.eco_mode = or_default(self._eco_mode, False)
+        cmd.turbo_mode = or_default(self._turbo_mode, False)
+        cmd.freeze_protection_mode = or_default(
+            self._freeze_protection_mode, False)
+        cmd.sleep_mode = or_default(self._sleep_mode, False)
+        cmd.fahrenheit = or_default(self._fahrenheit_unit, False)
+        cmd.follow_me = or_default(self._follow_me, False)
+
+        # Process any state responses from the device
+        for response in await self._send_command_get_responses(cmd):
+            self._process_state_response(response)
 
     @property
     def beep(self) -> bool:
@@ -335,8 +373,6 @@ class AirConditioner(Device):
 
     @beep.setter
     def beep(self, tone: bool) -> None:
-        if self._updating:
-            self._defer_update = True
         self._beep_on = tone
 
     @property
@@ -345,8 +381,6 @@ class AirConditioner(Device):
 
     @power_state.setter
     def power_state(self, state: bool) -> None:
-        if self._updating:
-            self._defer_update = True
         self._power_state = state
 
     @property
@@ -363,8 +397,6 @@ class AirConditioner(Device):
 
     @target_temperature.setter
     def target_temperature(self, temperature_celsius: float) -> None:
-        if self._updating:
-            self._defer_update = True
         self._target_temperature = temperature_celsius
 
     @property
@@ -377,8 +409,6 @@ class AirConditioner(Device):
 
     @operational_mode.setter
     def operational_mode(self, mode: OperationalMode) -> None:
-        if self._updating:
-            self._defer_update = True
         self._operational_mode = mode
 
     @property
@@ -395,9 +425,6 @@ class AirConditioner(Device):
 
     @fan_speed.setter
     def fan_speed(self, speed: FanSpeed | int | float) -> None:
-        if self._updating:
-            self._defer_update = True
-
         # Convert float as needed
         if isinstance(speed, float):
             speed = int(speed)
@@ -414,8 +441,6 @@ class AirConditioner(Device):
 
     @swing_mode.setter
     def swing_mode(self, mode: SwingMode) -> None:
-        if self._updating:
-            self._defer_update = True
         self._swing_mode = mode
 
     @property
@@ -428,8 +453,6 @@ class AirConditioner(Device):
 
     @eco_mode.setter
     def eco_mode(self, enabled: bool) -> None:
-        if self._updating:
-            self._defer_update = True
         self._eco_mode = enabled
 
     @property
@@ -442,8 +465,6 @@ class AirConditioner(Device):
 
     @turbo_mode.setter
     def turbo_mode(self, enabled: bool) -> None:
-        if self._updating:
-            self._defer_update = True
         self._turbo_mode = enabled
 
     @property
@@ -456,8 +477,6 @@ class AirConditioner(Device):
 
     @freeze_protection_mode.setter
     def freeze_protection_mode(self, enabled: bool) -> None:
-        if self._updating:
-            self._defer_update = True
         self._freeze_protection_mode = enabled
 
     @property
@@ -466,8 +485,6 @@ class AirConditioner(Device):
 
     @sleep_mode.setter
     def sleep_mode(self, enabled: bool) -> None:
-        if self._updating:
-            self._defer_update = True
         self._sleep_mode = enabled
 
     @property
@@ -476,8 +493,6 @@ class AirConditioner(Device):
 
     @fahrenheit.setter
     def fahrenheit(self, enabled: bool) -> None:
-        if self._updating:
-            self._defer_update = True
         self._fahrenheit_unit = enabled
 
     @property
@@ -486,8 +501,6 @@ class AirConditioner(Device):
 
     @follow_me.setter
     def follow_me(self, enabled: bool) -> None:
-        if self._updating:
-            self._defer_update = True
         self._follow_me = enabled
 
     @property

@@ -75,17 +75,19 @@ class TemperatureType(IntEnum):
 
 
 class GetCapabilitiesCommand(Command):
-    def __init__(self) -> None:
+    def __init__(self, additional: bool = False) -> None:
         super().__init__(DeviceType.AIR_CONDITIONER, frame_type=FrameType.REQUEST)
+
+        self._additional = additional
 
     @property
     def payload(self) -> bytes:
-        return bytes([
+        if not self._additional:
             # Get capabilities
-            0xB5,
-            # Unknown
-            0x01, 0x11,
-        ])
+            return bytes([0xB5, 0x01, 0x00])
+        else:
+            # Get more capabilities
+            return bytes([0xB5, 0x01, 0x01, 0x1])
 
 
 class GetStateCommand(Command):
@@ -287,12 +289,13 @@ class CapabilitiesResponse(Response):
         super().__init__(payload)
 
         self._capabilities = {}
+        self._additional_capabilities = False
 
         _LOGGER.debug("Capabilities response payload: %s", payload.hex())
 
         self._parse_capabilities(payload)
 
-        _LOGGER.debug("Supported capabilities: %s", self._capabilities)
+        _LOGGER.debug("Raw capabilities: %s", self._capabilities)
 
     def _parse_capabilities(self, payload: memoryview) -> None:
         # Clear existing capabilities
@@ -352,6 +355,7 @@ class CapabilitiesResponse(Response):
                 reader("turbo_heat", lambda v: v == 1 or v == 3),
                 reader("turbo_cool", lambda v: v < 2),
             ],
+            CapabilityId.ANION: reader("anion", get_value(1)),
             CapabilityId.HUMIDITY:
             [
                 reader("humidity_auto_set", lambda v: v == 1 or v == 2),
@@ -429,6 +433,20 @@ class CapabilitiesResponse(Response):
 
             # Advanced to next capability
             caps = caps[3+size:]
+
+        # Check if there are additional capabilities
+        if len(caps) > 1:
+            self._additional_capabilities = bool(caps[-2])
+
+    def merge(self, other: CapabilitiesResponse) -> None:
+        # Add other's capabiltiies to ours
+        self._capabilities.update(other._capabilities)
+
+        _LOGGER.debug("Merged raw capabilities: %s", self._capabilities)
+
+    @property
+    def additional_capabilities(self) -> bool:
+        return self._additional_capabilities
 
     def _get_fan_speed(self, speed) -> bool:
         # If any fan_ capability was received, check against them
