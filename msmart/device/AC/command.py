@@ -309,6 +309,8 @@ class CapabilitiesResponse(Response):
 
         # Create a map of capability ID to decoders
         capability_readers = {
+            CapabilityId.SWING_UD_ANGLE: reader("swing_vertical_angle", get_value(1)),
+            CapabilityId.SWING_LR_ANGLE: reader("swing_horizontal_angle", get_value(1)),
             CapabilityId.SILKY_COOL: reader("silky_cool", get_value(1)),
             CapabilityId.SMART_EYE:  reader("smart_eye", get_value(1)),
             CapabilityId.WIND_ON_ME:  reader("wind_on_me", get_value(1)),
