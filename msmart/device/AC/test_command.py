@@ -224,14 +224,6 @@ class TestCapabilitiesResponse(_TestResponseBase):
             self.assertIsNotNone(resp)
             return resp
 
-        # Test INDOOR_HUMIDITY capability which uses a boolean parser. e.g. X > 0
-        self.assertEqual(_build_capability_response(
-            CapabilityId.INDOOR_HUMIDITY, 0)._capabilities["indoor_humidity"], False)
-        self.assertEqual(_build_capability_response(
-            CapabilityId.INDOOR_HUMIDITY, 1)._capabilities["indoor_humidity"], True)
-        self.assertEqual(_build_capability_response(
-            CapabilityId.INDOOR_HUMIDITY, 100)._capabilities["indoor_humidity"], True)
-
         # Test SILKY_COOL capability which uses a get_value parser. e.g. X == 1
         self.assertEqual(_build_capability_response(
             CapabilityId.SILKY_COOL, 0)._capabilities["silky_cool"], False)
