@@ -301,7 +301,6 @@ class CapabilitiesResponse(Response):
         self._capabilities.clear()
 
         # Define some local functions to parse capability values
-        def get_bool(v) -> bool: return v != 0
         def get_value(w) -> Callable[[int], bool]: return lambda v: v == w
 
         # Define a named tuple that represents a decoder
@@ -350,7 +349,7 @@ class CapabilitiesResponse(Response):
                 reader("filter_notice", lambda v: v == 1 or v == 2 or v == 4),
                 reader("filter_clean", lambda v: v == 3 or v == 4),
             ],
-            CapabilityId.AUX_ELECTRIC_HEAT: reader("aux_electric_heat", get_bool),
+            CapabilityId.AUX_ELECTRIC_HEAT: reader("aux_electric_heat", get_value(1)),
             CapabilityId.PRESET_TURBO:  [
                 reader("turbo_heat", lambda v: v == 1 or v == 3),
                 reader("turbo_cool", lambda v: v < 2),
@@ -362,9 +361,9 @@ class CapabilitiesResponse(Response):
                 reader("humidity_manual_set", lambda v: v == 2 or v == 3),
             ],
             CapabilityId.FAHRENHEIT: reader("fahrenheit", get_value(0)),
-            CapabilityId.DISPLAY_CONTROL: reader("display_control", get_bool),
+            CapabilityId.DISPLAY_CONTROL: reader("display_control", lambda v: v in [1, 2, 100]),
             # Temperatures capability too complex to be handled here
-            CapabilityId.BUZZER:  reader("buzzer", get_bool),
+            CapabilityId.BUZZER:  reader("buzzer", get_value(1)),
         }
 
         count = payload[1]
