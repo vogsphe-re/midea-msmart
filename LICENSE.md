@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2023 Tucker Kern  
+Copyright (c) 2023, 2024 Tucker Kern  
 Copyright (c) 2020 Colin Kuebler (@kueblc)  
 Copyright (c) 2020 Mac_Zhou (@mac-zhou)  
 Copyright (c) 2018 NeoAcheron  
