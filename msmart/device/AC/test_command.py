@@ -542,7 +542,7 @@ class TestGetPropertiesCommand(unittest.TestCase):
         command = GetPropertiesCommand(PROPS)
 
         # Fetch payload
-        payload = command.payload
+        payload = command.tobytes()[10:-1]
 
         # Assert payload header looks correct
         self.assertEqual(payload[0], 0xB1)
@@ -565,7 +565,7 @@ class TestSetPropertiesCommand(unittest.TestCase):
         command = SetPropertiesCommand(PROPS)
 
         # Fetch payload
-        payload = command.payload
+        payload = command.tobytes()[10:-1]
 
         # Assert payload header looks correct
         self.assertEqual(payload[0], 0xB0)
