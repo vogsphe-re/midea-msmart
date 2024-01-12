@@ -324,11 +324,10 @@ class Response():
 
     @classmethod
     def validate(cls, frame: memoryview) -> None:
-        # Validate frame checksum
-        frame_checksum = Frame.checksum(frame[1:-1])
-        if frame_checksum != frame[-1]:
-            raise InvalidResponseException(
-                f"Frame '{frame.hex()}' failed checksum. Received: 0x{frame[-1]:X}, Expected: 0x{frame_checksum:X}.")
+        try:
+            Frame.validate(frame)
+        except InvalidFrameException as e:
+            raise InvalidResponseException(e) from e
 
         # Extract frame payload to validate CRC/checksum
         payload = frame[10:-1]

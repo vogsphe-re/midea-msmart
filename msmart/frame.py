@@ -3,6 +3,10 @@ from typing import Union
 from msmart.const import DeviceType, FrameType
 
 
+class InvalidFrameException(Exception):
+    pass
+
+
 class Frame():
 
     _HEADER_LENGTH = 10
@@ -42,3 +46,11 @@ class Frame():
     @classmethod
     def checksum(cls, frame: bytes) -> int:
         return (~sum(frame) + 1) & 0xFF
+
+    @classmethod
+    def validate(cls, frame: memoryview) -> None:
+        # Validate frame checksum
+        checksum = Frame.checksum(frame[1:-1])
+        if checksum != frame[-1]:
+            raise InvalidFrameException(
+                f"Frame '{frame.hex()}' failed checksum. Received: 0x{frame[-1]:X}, Expected: 0x{checksum:X}.")
