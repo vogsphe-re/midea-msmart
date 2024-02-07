@@ -4,6 +4,14 @@ A Python library for local control of Midea (and associated brands) smart air co
 [![Code Quality Checks](https://github.com/mill1000/midea-msmart/actions/workflows/checks.yml/badge.svg)](https://github.com/mill1000/midea-msmart/actions/workflows/checks.yml)
 [![PyPI](https://img.shields.io/pypi/v/msmart-ng?logo=PYPI)](https://pypi.org/project/msmart-ng/)
 
+If a devices uses one of the following apps it is likely supported:
+* Artic King (com.arcticking.ac)
+* Midea Air (com.midea.aircondition.obm)
+* NetHome Plus (com.midea.aircondition)
+* SmartHome/MSmartHome (com.midea.ai.overseas)
+* Toshiba AC NA (com.midea.toshiba)
+* 美的美居 (com.midea.ai.appliances)
+  
 __Note: Only air conditioner devices (type 0xAC) are supported.__ 
 
 See [usage](#usage) to determine if a device is supported.
