@@ -378,6 +378,7 @@ class CapabilitiesResponse(Response):
             # Skip empty capabilities
             size = caps[2]
             if size == 0:
+                caps = caps[3:]
                 continue
 
             # Unpack 16 bit ID
