@@ -1,3 +1,6 @@
 from importlib import metadata
 
-__version__ = metadata.version("msmart-ng")
+try:
+    __version__ = metadata.version("msmart-ng")
+except metadata.PackageNotFoundError:
+    __version__ = "UNKNOWN"
