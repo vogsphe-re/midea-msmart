@@ -308,15 +308,12 @@ class CapabilitiesResponse(Response):
 
         # Create a map of capability ID to decoders
         capability_readers = {
-            CapabilityId.SWING_UD_ANGLE: reader("swing_vertical_angle", get_value(1)),
-            CapabilityId.SWING_LR_ANGLE: reader("swing_horizontal_angle", get_value(1)),
-            CapabilityId.SILKY_COOL: reader("silky_cool", get_value(1)),
-            CapabilityId.SMART_EYE:  reader("smart_eye", get_value(1)),
-            CapabilityId.WIND_ON_ME:  reader("wind_on_me", get_value(1)),
-            CapabilityId.WIND_OFF_ME:  reader("wind_off_me", get_value(1)),
-            CapabilityId.SELF_CLEAN:  reader("self_clean", get_value(1)),
-            CapabilityId.ONE_KEY_NO_WIND_ON_ME: reader("one_key_no_wind_on_me", get_value(1)),
+            CapabilityId.ANION: reader("anion", get_value(1)),
+            CapabilityId.AUX_ELECTRIC_HEAT: reader("aux_electric_heat", get_value(1)),
             CapabilityId.BREEZE_CONTROL: reader("breeze_control", get_value(1)),
+            CapabilityId.BUZZER:  reader("buzzer", get_value(1)),
+            CapabilityId.DISPLAY_CONTROL: reader("display_control", lambda v: v in [1, 2, 100]),
+            CapabilityId.FAHRENHEIT: reader("fahrenheit", get_value(0)),
             CapabilityId.FAN_SPEED_CONTROL: [
                 reader("fan_silent", get_value(6)),
                 reader("fan_low", lambda v: v in [3, 4, 5, 6, 7]),
@@ -325,45 +322,48 @@ class CapabilitiesResponse(Response):
                 reader("fan_auto", lambda v: v in [4, 5, 6]),
                 reader("fan_custom", get_value(1)),
             ],
-            CapabilityId.PRESET_ECO: [
-                reader("eco_mode", get_value(1)),
-                reader("eco_mode_2", get_value(2)),
+            CapabilityId.FILTER_REMIND: [
+                reader("filter_notice", lambda v: v == 1 or v == 2 or v == 4),
+                reader("filter_clean", lambda v: v == 3 or v == 4),
             ],
-            CapabilityId.PRESET_FREEZE_PROTECTION: reader("freeze_protection", get_value(1)),
+            CapabilityId.HUMIDITY:
+            [
+                reader("humidity_auto_set", lambda v: v == 1 or v == 2),
+                reader("humidity_manual_set", lambda v: v == 2 or v == 3),
+            ],
             CapabilityId.MODES: [
                 reader("heat_mode", lambda v: v in [1, 2, 4, 6, 7, 9]),
                 reader("cool_mode", lambda v: v != 2),
                 reader("dry_mode", lambda v: v in [0, 1, 5, 6, 9]),
                 reader("auto_mode", lambda v: v in [0, 1, 2, 7, 8, 9]),
             ],
-            CapabilityId.SWING_MODES: [
-                reader("swing_horizontal", lambda v: v == 1 or v == 3),
-                reader("swing_vertical", lambda v: v < 2),
-            ],
+            CapabilityId.ONE_KEY_NO_WIND_ON_ME: reader("one_key_no_wind_on_me", get_value(1)),
             CapabilityId.POWER: [
                 reader("power_stats", lambda v: v in [2, 3, 4, 5]),
                 reader("power_setting", lambda v: v in [3, 5]),
                 reader("power_bcd", lambda v: v in [4, 5]),
             ],
-            CapabilityId.FILTER_REMIND: [
-                reader("filter_notice", lambda v: v == 1 or v == 2 or v == 4),
-                reader("filter_clean", lambda v: v == 3 or v == 4),
+            CapabilityId.PRESET_ECO: [
+                reader("eco_mode", get_value(1)),
+                reader("eco_mode_2", get_value(2)),
             ],
-            CapabilityId.AUX_ELECTRIC_HEAT: reader("aux_electric_heat", get_value(1)),
+            CapabilityId.PRESET_FREEZE_PROTECTION: reader("freeze_protection", get_value(1)),
             CapabilityId.PRESET_TURBO:  [
                 reader("turbo_heat", lambda v: v == 1 or v == 3),
                 reader("turbo_cool", lambda v: v < 2),
             ],
-            CapabilityId.ANION: reader("anion", get_value(1)),
-            CapabilityId.HUMIDITY:
-            [
-                reader("humidity_auto_set", lambda v: v == 1 or v == 2),
-                reader("humidity_manual_set", lambda v: v == 2 or v == 3),
+            CapabilityId.SELF_CLEAN:  reader("self_clean", get_value(1)),
+            CapabilityId.SILKY_COOL: reader("silky_cool", get_value(1)),
+            CapabilityId.SMART_EYE:  reader("smart_eye", get_value(1)),
+            CapabilityId.SWING_LR_ANGLE: reader("swing_horizontal_angle", get_value(1)),
+            CapabilityId.SWING_UD_ANGLE: reader("swing_vertical_angle", get_value(1)),
+            CapabilityId.SWING_MODES: [
+                reader("swing_horizontal", lambda v: v == 1 or v == 3),
+                reader("swing_vertical", lambda v: v < 2),
             ],
-            CapabilityId.FAHRENHEIT: reader("fahrenheit", get_value(0)),
-            CapabilityId.DISPLAY_CONTROL: reader("display_control", lambda v: v in [1, 2, 100]),
-            # Temperatures capability too complex to be handled here
-            CapabilityId.BUZZER:  reader("buzzer", get_value(1)),
+            # CapabilityId.TEMPERATURES too complex to be handled here
+            CapabilityId.WIND_OFF_ME:  reader("wind_off_me", get_value(1)),
+            CapabilityId.WIND_ON_ME:  reader("wind_on_me", get_value(1)),
         }
 
         count = payload[1]
