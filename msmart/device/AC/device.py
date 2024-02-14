@@ -122,8 +122,6 @@ class AirConditioner(Device):
         self._min_target_temperature = 16
         self._max_target_temperature = 30
 
-        self._on_timer = None
-        self._off_timer = None
         self._indoor_temperature = None
         self._outdoor_temperature = None
 
@@ -162,9 +160,6 @@ class AirConditioner(Device):
         self._filter_alert = res.filter_alert
 
         self._follow_me = res.follow_me
-
-        # self._on_timer = res.on_timer
-        # self._off_timer = res.off_timer
 
     def _update_capabilities(self, res: CapabilitiesResponse) -> None:
         # Build list of supported operation modes
@@ -518,14 +513,6 @@ class AirConditioner(Device):
     @property
     def outdoor_temperature(self) -> Optional[float]:
         return self._outdoor_temperature
-
-    @property
-    def on_timer(self):
-        return self._on_timer
-
-    @property
-    def off_timer(self):
-        return self._off_timer
 
     @property
     def supports_display_control(self) -> Optional[bool]:
