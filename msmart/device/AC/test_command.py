@@ -490,7 +490,7 @@ class TestCapabilitiesResponse(_TestResponseBase):
         # Ensure the additional capabilities response doesn't also want more capabilities
         self.assertEqual(additional_resp.additional_capabilities, False)
 
-        # Check that merging the capabiltiies produced expected results
+        # Check that merging the capabilities produced expected results
         resp.merge(additional_resp)
 
         EXPECTED_MERGED_RAW_CAPABILITIES = {

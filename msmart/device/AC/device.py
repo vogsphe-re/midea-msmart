@@ -251,7 +251,7 @@ class AirConditioner(Device):
 
         return valid_responses
 
-    async def _send_command_get_reponse_with_id(self, command, response_id: ResponseId) -> Optional[Response]:
+    async def _send_command_get_response_with_id(self, command, response_id: ResponseId) -> Optional[Response]:
         """Send a command and return the first response with a matching ID."""
         for response in await self._send_command_get_responses(command):
             if response.id == response_id:
@@ -267,7 +267,7 @@ class AirConditioner(Device):
 
         # Send capabilities request and get a response
         cmd = GetCapabilitiesCommand()
-        response = await self._send_command_get_reponse_with_id(cmd, ResponseId.CAPABILITIES)
+        response = await self._send_command_get_response_with_id(cmd, ResponseId.CAPABILITIES)
         response = cast(CapabilitiesResponse, response)
 
         if response is None:
@@ -277,7 +277,7 @@ class AirConditioner(Device):
         # Send 2nd capabilities request if needed
         if response.additional_capabilities:
             cmd = GetCapabilitiesCommand(True)
-            additional_response = await self._send_command_get_reponse_with_id(cmd, ResponseId.CAPABILITIES)
+            additional_response = await self._send_command_get_response_with_id(cmd, ResponseId.CAPABILITIES)
             additional_response = cast(
                 CapabilitiesResponse, additional_response)
 

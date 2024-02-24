@@ -30,7 +30,7 @@ class CapabilityId(IntEnum):
     SMART_EYE = 0x0030
     WIND_ON_ME = 0x0032
     WIND_OFF_ME = 0x0033
-    SELF_CLEAN = 0x0039  # AKA Acive Clean
+    SELF_CLEAN = 0x0039  # AKA Active Clean
     ONE_KEY_NO_WIND_ON_ME = 0x0042
     BREEZE_CONTROL = 0x0043  # AKA "FA No Wind Sense"
     RATE_SELECT = 0x0048
@@ -439,7 +439,7 @@ class CapabilitiesResponse(Response):
             self._additional_capabilities = bool(caps[-2])
 
     def merge(self, other: CapabilitiesResponse) -> None:
-        # Add other's capabiltiies to ours
+        # Add other's capabilities to ours
         self._capabilities.update(other._capabilities)
 
         _LOGGER.debug("Merged raw capabilities: %s", self._capabilities)
