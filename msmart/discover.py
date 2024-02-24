@@ -226,6 +226,9 @@ class Discover:
     async def _get_cloud(cls) -> Optional[Cloud]:
         """Return a cloud connection, creating it if necessary."""
 
+        # Lock should exist by now
+        assert (cls._lock)
+
         async with cls._lock:
             # Create cloud connection if nonexistent
             if cls._cloud is None:
