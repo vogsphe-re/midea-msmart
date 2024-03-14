@@ -1,4 +1,3 @@
-import logging
 import unittest
 from typing import Union, cast
 
@@ -308,18 +307,13 @@ class TestCapabilitiesResponse(_TestResponseBase):
     def test_capabilities_2(self) -> None:
         """Test that we decode capabilities responses as expected."""
         # https://github.com/mac-zhou/midea-ac-py/pull/177#issuecomment-1259772244
-        # Test case includes an unknown capability 0x40
-        # Suppress any warnings from capability parsing
-        level = logging.getLogger("msmart").getEffectiveLevel()
-        logging.getLogger("msmart").setLevel(logging.ERROR)
-
         TEST_CAPABILITIES_RESPONSE = bytes.fromhex(
             "aa3dac00000000000203b50a12020101180001001402010115020101160201001a020101100201011f020100250207203c203c203c00400001000100c83a")
-        resp = self._test_build_response(TEST_CAPABILITIES_RESPONSE)
-        resp = cast(CapabilitiesResponse, resp)
 
-        # Restore original level
-        logging.getLogger("msmart").setLevel(level)
+        # Test case includes an unknown capability 0x40 that generates a warning
+        with self.assertLogs("msmart") as log:
+            resp = self._test_build_response(TEST_CAPABILITIES_RESPONSE)
+            resp = cast(CapabilitiesResponse, resp)
 
         EXPECTED_RAW_CAPABILITIES = {
             "eco_mode": True, "eco_mode_2": False, "silky_cool": False,
@@ -437,18 +431,13 @@ class TestCapabilitiesResponse(_TestResponseBase):
         self.maxDiff = None
         """Test that we decode capabilities and additional capabilities responses as expected."""
         # https://github.com/mill1000/midea-ac-py/issues/60#issuecomment-1867498321
-        # Test case includes an unknown capability 0x40
-        # Suppress any warnings from capability parsing
-        level = logging.getLogger("msmart").getEffectiveLevel()
-        logging.getLogger("msmart").setLevel(logging.ERROR)
-
         TEST_CAPABILITIES_RESPONSE = bytes.fromhex(
             "aa3dac00000000000303b50a12020101430001011402010115020101160201001a020101100201011f020103250207203c203c203c05400001000100c805")
-        resp = self._test_build_response(TEST_CAPABILITIES_RESPONSE)
-        resp = cast(CapabilitiesResponse, resp)
 
-        # Restore original level
-        logging.getLogger("msmart").setLevel(level)
+        # Test case includes an unknown capability 0x40 that generates a warning
+        with self.assertLogs("msmart") as log:
+            resp = self._test_build_response(TEST_CAPABILITIES_RESPONSE)
+            resp = cast(CapabilitiesResponse, resp)
 
         EXPECTED_RAW_CAPABILITIES = {
             "eco_mode": True, "eco_mode_2": False,
