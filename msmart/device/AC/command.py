@@ -87,7 +87,7 @@ class TemperatureType(IntEnum):
 
 class Command(Frame):
     """Base class for AC commands."""
-    
+
     CONTROL_SOURCE = 0x2  # App control
 
     _message_id = 0
@@ -109,6 +109,8 @@ class Command(Frame):
 
 
 class GetCapabilitiesCommand(Command):
+    """Command to query capabilities of the device."""
+
     def __init__(self, additional: bool = False) -> None:
         super().__init__(frame_type=FrameType.QUERY)
 
@@ -116,13 +118,17 @@ class GetCapabilitiesCommand(Command):
 
     def tobytes(self) -> bytes:  # pyright: ignore[reportIncompatibleMethodOverride] # nopep8
         if not self._additional:
+            # Get capabilities
             payload = bytes([0xB5, 0x01, 0x00])
         else:
+            # Get more capabilities
             payload = bytes([0xB5, 0x01, 0x01, 0x1])
         return super().tobytes(payload)
 
 
 class GetStateCommand(Command):
+    """Command to query basic state of the device."""
+
     def __init__(self) -> None:
         super().__init__(frame_type=FrameType.QUERY)
 
@@ -146,6 +152,8 @@ class GetStateCommand(Command):
 
 
 class SetStateCommand(Command):
+    """Command to set basic state of the device."""
+
     def __init__(self) -> None:
         super().__init__(frame_type=FrameType.CONTROL)
 
@@ -238,6 +246,8 @@ class SetStateCommand(Command):
 
 
 class ToggleDisplayCommand(Command):
+    """Command to toggle the LED display of the device."""
+
     def __init__(self) -> None:
         # For whatever reason, toggle display uses a request type...
         super().__init__(frame_type=FrameType.QUERY)
@@ -309,6 +319,8 @@ class SetPropertiesCommand(Command):
 
 
 class Response():
+    """Base class for AC responses."""
+
     def __init__(self, payload: memoryview) -> None:
         # Set ID and copy the payload
         self._id = payload[0]
@@ -361,6 +373,8 @@ class Response():
 
 
 class CapabilitiesResponse(Response):
+    """Response to capabilities query."""
+
     def __init__(self, payload: memoryview) -> None:
         super().__init__(payload)
 
@@ -629,6 +643,8 @@ class CapabilitiesResponse(Response):
 
 
 class StateResponse(Response):
+    """Response to state query."""
+
     def __init__(self, payload: memoryview) -> None:
         super().__init__(payload)
 
