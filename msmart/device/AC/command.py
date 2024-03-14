@@ -8,8 +8,8 @@ from enum import IntEnum
 from typing import Callable, Collection, Mapping, Optional, Union
 
 import msmart.crc8 as crc8
-from msmart.base_command import Command
 from msmart.const import DeviceType, FrameType
+from msmart.frame import Frame
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -85,31 +85,57 @@ class TemperatureType(IntEnum):
     OUTDOOR = 0x3
 
 
+class Command(Frame):
+    """Base class for AC commands."""
+
+    CONTROL_SOURCE = 0x2  # App control
+
+    _message_id = 0
+
+    def __init__(self, frame_type: FrameType) -> None:
+        super().__init__(DeviceType.AIR_CONDITIONER, frame_type)
+
+    def tobytes(self, data: Union[bytes, bytearray] = bytes()) -> bytes:
+        # Append message ID to payload
+        # TODO Message ID in reference is just a random value
+        payload = data + bytes([self._next_message_id()])
+
+        # Append CRC
+        return super().tobytes(payload + bytes([crc8.calculate(payload)]))
+
+    def _next_message_id(self) -> int:
+        Command._message_id += 1
+        return Command._message_id & 0xFF
+
+
 class GetCapabilitiesCommand(Command):
+    """Command to query capabilities of the device."""
+
     def __init__(self, additional: bool = False) -> None:
-        super().__init__(DeviceType.AIR_CONDITIONER, frame_type=FrameType.REQUEST)
+        super().__init__(frame_type=FrameType.QUERY)
 
         self._additional = additional
 
-    @property
-    def payload(self) -> bytes:
+    def tobytes(self) -> bytes:  # pyright: ignore[reportIncompatibleMethodOverride] # nopep8
         if not self._additional:
             # Get capabilities
-            return bytes([0xB5, 0x01, 0x00])
+            payload = bytes([0xB5, 0x01, 0x00])
         else:
             # Get more capabilities
-            return bytes([0xB5, 0x01, 0x01, 0x1])
+            payload = bytes([0xB5, 0x01, 0x01, 0x1])
+        return super().tobytes(payload)
 
 
 class GetStateCommand(Command):
+    """Command to query basic state of the device."""
+
     def __init__(self) -> None:
-        super().__init__(DeviceType.AIR_CONDITIONER, frame_type=FrameType.REQUEST)
+        super().__init__(frame_type=FrameType.QUERY)
 
         self.temperature_type = TemperatureType.INDOOR
 
-    @property
-    def payload(self) -> bytes:
-        return bytes([
+    def tobytes(self) -> bytes:  # pyright: ignore[reportIncompatibleMethodOverride] # nopep8
+        return super().tobytes(bytes([
             # Get state
             0x41,
             # Unknown
@@ -122,12 +148,14 @@ class GetStateCommand(Command):
             0x00, 0x00, 0x00, 0x00,
             # Unknown
             0x03,
-        ])
+        ]))
 
 
 class SetStateCommand(Command):
+    """Command to set basic state of the device."""
+
     def __init__(self) -> None:
-        super().__init__(DeviceType.AIR_CONDITIONER, frame_type=FrameType.SET)
+        super().__init__(frame_type=FrameType.CONTROL)
 
         self.beep_on = True
         self.power_on = False
@@ -142,8 +170,7 @@ class SetStateCommand(Command):
         self.freeze_protection_mode = False
         self.follow_me = False
 
-    @property
-    def payload(self) -> bytes:
+    def tobytes(self) -> bytes:  # pyright: ignore[reportIncompatibleMethodOverride] # nopep8
         # Build beep and power status bytes
         beep = 0x40 if self.beep_on else 0
         power = 0x1 if self.power_on else 0
@@ -185,7 +212,7 @@ class SetStateCommand(Command):
         # Build alternate turbo byte
         freeze_protect = 0x80 if self.freeze_protection_mode else 0
 
-        return bytes([
+        return super().tobytes(bytes([
             # Set state
             0x40,
             # Beep and power state
@@ -215,22 +242,23 @@ class SetStateCommand(Command):
             freeze_protect,
             # Unknown
             0x00, 0x00,
-        ])
+        ]))
 
 
 class ToggleDisplayCommand(Command):
+    """Command to toggle the LED display of the device."""
+
     def __init__(self) -> None:
         # For whatever reason, toggle display uses a request type...
-        super().__init__(DeviceType.AIR_CONDITIONER, frame_type=FrameType.REQUEST)
+        super().__init__(frame_type=FrameType.QUERY)
 
         self.beep_on = True
 
-    @property
-    def payload(self) -> bytes:
+    def tobytes(self) -> bytes:  # pyright: ignore[reportIncompatibleMethodOverride] # nopep8
         # Set beep bit
         beep = 0x40 if self.beep_on else 0
 
-        return bytes([
+        return super().tobytes(bytes([
             # Get state
             0x41,
             # Beep and other flags
@@ -241,19 +269,18 @@ class ToggleDisplayCommand(Command):
             0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00,
-        ])
+        ]))
 
 
 class GetPropertiesCommand(Command):
     """Command to query specific properties from the device."""
 
     def __init__(self, props: Collection[PropertyId]) -> None:
-        super().__init__(DeviceType.AIR_CONDITIONER, frame_type=FrameType.REQUEST)
+        super().__init__(frame_type=FrameType.QUERY)
 
         self._properties = props
 
-    @property
-    def payload(self) -> bytes:
+    def tobytes(self) -> bytes:  # pyright: ignore[reportIncompatibleMethodOverride] # nopep8
         payload = bytearray([
             0xB1,  # Property request
             len(self._properties),
@@ -262,19 +289,18 @@ class GetPropertiesCommand(Command):
         for prop in self._properties:
             payload += struct.pack("<H", prop)
 
-        return payload
+        return super().tobytes(payload)
 
 
 class SetPropertiesCommand(Command):
     """Command to set specific properties of the device."""
 
     def __init__(self, props: Mapping[PropertyId, Union[bytes, int]]) -> None:
-        super().__init__(DeviceType.AIR_CONDITIONER, frame_type=FrameType.SET)
+        super().__init__(frame_type=FrameType.CONTROL)
 
         self._properties = props
 
-    @property
-    def payload(self) -> bytes:
+    def tobytes(self) -> bytes:  # pyright: ignore[reportIncompatibleMethodOverride] # nopep8
         payload = bytearray([
             0xB0,  # Property request
             len(self._properties),
@@ -289,10 +315,12 @@ class SetPropertiesCommand(Command):
             payload += bytes([len(value)])
             payload += value
 
-        return payload
+        return super().tobytes(payload)
 
 
 class Response():
+    """Base class for AC responses."""
+
     def __init__(self, payload: memoryview) -> None:
         # Set ID and copy the payload
         self._id = payload[0]
@@ -307,30 +335,35 @@ class Response():
         return self._payload
 
     @classmethod
-    def validate(cls, frame: memoryview) -> None:
-        # Validate frame checksum
-        frame_checksum = Command.checksum(frame[1:-1])
-        if frame_checksum != frame[-1]:
-            raise InvalidResponseException(
-                f"Frame '{frame.hex()}' failed checksum. Received: 0x{frame[-1]:X}, Expected: 0x{frame_checksum:X}.")
+    def validate(cls, frame: memoryview, skip_crc: bool = False) -> None:
+        """Validate a response by checking the frame checksum and payload CRC."""
+
+        # Attempt to validate the frame
+        Frame.validate(frame)
+
+        # Exit early if not checking CRC
+        if skip_crc:
+            return
 
         # Extract frame payload to validate CRC/checksum
         payload = frame[10:-1]
 
         # Some devices use a CRC others seem to use a 2nd checksum
         payload_crc = crc8.calculate(payload[0:-1])
-        payload_checksum = Command.checksum(payload[0:-1])
+        payload_checksum = Frame.checksum(payload[0:-1])
 
         if payload_crc != payload[-1] and payload_checksum != payload[-1]:
             raise InvalidResponseException(
                 f"Payload '{payload.hex()}' failed CRC and checksum. Received: 0x{payload[-1]:X}, Expected: 0x{payload_crc:X} or 0x{payload_checksum:X}.")
 
     @classmethod
-    def construct(cls, frame: bytes) -> Union[StateResponse, CapabilitiesResponse, Response]:
+    def construct(cls, frame: bytes, skip_crc: bool = False) -> Response:
+        """Construct a response object from raw data."""
+
         # Build a memoryview of the frame for zero-copy slicing
         with memoryview(frame) as frame_mv:
             # Ensure frame is valid before parsing
-            Response.validate(frame_mv)
+            Response.validate(frame_mv, skip_crc)
 
             # Parse frame depending on id
             response_id = frame_mv[10]
@@ -346,6 +379,8 @@ class Response():
 
 
 class CapabilitiesResponse(Response):
+    """Response to capabilities query."""
+
     def __init__(self, payload: memoryview) -> None:
         super().__init__(payload)
 
@@ -614,6 +649,8 @@ class CapabilitiesResponse(Response):
 
 
 class StateResponse(Response):
+    """Response to state query."""
+
     def __init__(self, payload: memoryview) -> None:
         super().__init__(payload)
 

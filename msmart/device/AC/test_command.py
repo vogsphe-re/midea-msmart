@@ -1,9 +1,13 @@
 import unittest
 from typing import Union, cast
 
-from .command import (CapabilitiesResponse, CapabilityId, GetPropertiesCommand,
-                      PropertiesResponse, PropertyId, Response,
-                      SetPropertiesCommand, StateResponse)
+from msmart.const import DeviceType, FrameType
+from msmart.frame import Frame
+
+from .command import (CapabilitiesResponse, CapabilityId, Command,
+                      GetPropertiesCommand, GetStateCommand,
+                      InvalidResponseException, PropertiesResponse, PropertyId,
+                      Response, SetPropertiesCommand, StateResponse)
 
 
 class _TestResponseBase(unittest.TestCase):
@@ -24,6 +28,40 @@ class _TestResponseBase(unittest.TestCase):
         """Assert that an object has all expected attributes."""
         for attr in expected_attrs:
             self.assertHasAttr(obj, attr)
+
+
+class TestCommand(unittest.TestCase):
+
+    def test_frame(self) -> None:
+        """Test that we frame a command properly."""
+
+        EXPECTED_PAYLOAD = bytes.fromhex(
+            "418100ff03ff00020000000000000000000000000311f4")
+
+        # Override message id to match test data
+        Command._message_id = 0x10
+
+        # Build frame from command
+        command = GetStateCommand()
+        frame = command.tobytes()
+        self.assertIsNotNone(frame)
+
+        # Assert that frame is valid
+        with memoryview(frame) as frame_mv:
+            Frame.validate(frame_mv)
+
+        # Check frame payload to ensure it matches expected
+        self.assertEqual(frame[10:-1], EXPECTED_PAYLOAD)
+
+        # Check length byte
+        self.assertEqual(frame[1], len(
+            EXPECTED_PAYLOAD) + Frame._HEADER_LENGTH)
+
+        # Check device type
+        self.assertEqual(frame[2], DeviceType.AIR_CONDITIONER)
+
+        # Check frame type
+        self.assertEqual(frame[9], FrameType.QUERY)
 
 
 class TestStateResponse(_TestResponseBase):
@@ -531,7 +569,7 @@ class TestGetPropertiesCommand(unittest.TestCase):
         command = GetPropertiesCommand(PROPS)
 
         # Fetch payload
-        payload = command.payload
+        payload = command.tobytes()[10:-1]
 
         # Assert payload header looks correct
         self.assertEqual(payload[0], 0xB1)
@@ -554,7 +592,7 @@ class TestSetPropertiesCommand(unittest.TestCase):
         command = SetPropertiesCommand(PROPS)
 
         # Fetch payload
-        payload = command.payload
+        payload = command.tobytes()[10:-1]
 
         # Assert payload header looks correct
         self.assertEqual(payload[0], 0xB0)
@@ -618,6 +656,32 @@ class TestPropertiesResponse(_TestResponseBase):
 
         # Check state
         self.assertEqual(resp.swing_horizontal_angle, 50)
+
+    def test_properties_response_invalid_crc(self) -> None:
+        """Test we decode a properties response sent with an invalid CRC correctly."""
+        # https://github.com/mill1000/midea-ac-py/issues/101#issuecomment-1994824924
+        TEST_RESPONSE = bytes.fromhex(
+            "aa14ac00000000000303b10109000001003c000042")
+
+        # Assert that constructing with CRC checks results in an exception
+        with self.assertRaises(InvalidResponseException):
+            resp = Response.construct(TEST_RESPONSE, skip_crc=False)
+
+        # Create response without checking CRC and assert it's expected type
+        resp = Response.construct(TEST_RESPONSE, skip_crc=True)
+
+        self.assertIsNotNone(resp)
+        self.assertEqual(type(resp), PropertiesResponse)
+        resp = cast(PropertiesResponse, resp)
+
+        EXPECTED_RAW_PROPERTIES = {
+            PropertyId.SWING_UD_ANGLE: 0,
+        }
+        # Ensure raw decoded properties match
+        self.assertEqual(resp._properties, EXPECTED_RAW_PROPERTIES)
+
+        # Check state
+        self.assertEqual(resp.swing_vertical_angle, 0)
 
 
 if __name__ == "__main__":
