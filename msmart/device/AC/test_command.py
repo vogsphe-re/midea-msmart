@@ -2,7 +2,11 @@ import logging
 import unittest
 from typing import Union, cast
 
-from .command import (CapabilitiesResponse, CapabilityId, GetPropertiesCommand,
+from msmart.const import DeviceType, FrameType
+from msmart.frame import Frame
+
+from .command import (CapabilitiesResponse, CapabilityId, Command,
+                      GetPropertiesCommand, GetStateCommand,
                       PropertiesResponse, PropertyId, Response,
                       SetPropertiesCommand, StateResponse)
 
@@ -25,6 +29,40 @@ class _TestResponseBase(unittest.TestCase):
         """Assert that an object has all expected attributes."""
         for attr in expected_attrs:
             self.assertHasAttr(obj, attr)
+
+
+class TestCommand(unittest.TestCase):
+
+    def test_frame(self) -> None:
+        """Test that we frame a command properly."""
+
+        EXPECTED_PAYLOAD = bytes.fromhex(
+            "418100ff03ff00020000000000000000000000000311f4")
+
+        # Override message id to match test data
+        Command._message_id = 0x10
+
+        # Build frame from command
+        command = GetStateCommand()
+        frame = command.tobytes()
+        self.assertIsNotNone(frame)
+
+        # Assert that frame is valid
+        with memoryview(frame) as frame_mv:
+            Frame.validate(frame_mv)
+
+        # Check frame payload to ensure it matches expected
+        self.assertEqual(frame[10:-1], EXPECTED_PAYLOAD)
+
+        # Check length byte
+        self.assertEqual(frame[1], len(
+            EXPECTED_PAYLOAD) + Frame._HEADER_LENGTH)
+
+        # Check device type
+        self.assertEqual(frame[2], DeviceType.AIR_CONDITIONER)
+
+        # Check frame type
+        self.assertEqual(frame[9], FrameType.QUERY)
 
 
 class TestStateResponse(_TestResponseBase):
