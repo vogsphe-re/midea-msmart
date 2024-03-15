@@ -335,47 +335,43 @@ class Response():
         return self._payload
 
     @classmethod
-    def validate(cls, frame: memoryview, skip_crc: bool = False) -> None:
+    def validate(cls, payload: memoryview) -> None:
         """Validate a response by checking the frame checksum and payload CRC."""
-
-        # Attempt to validate the frame
-        Frame.validate(frame)
-
-        # Exit early if not checking CRC
-        if skip_crc:
-            return
-
-        # Extract frame payload to validate CRC/checksum
-        payload = frame[10:-1]
 
         # Some devices use a CRC others seem to use a 2nd checksum
         payload_crc = crc8.calculate(payload[0:-1])
         payload_checksum = Frame.checksum(payload[0:-1])
-
         if payload_crc != payload[-1] and payload_checksum != payload[-1]:
             raise InvalidResponseException(
                 f"Payload '{payload.hex()}' failed CRC and checksum. Received: 0x{payload[-1]:X}, Expected: 0x{payload_crc:X} or 0x{payload_checksum:X}.")
 
     @classmethod
-    def construct(cls, frame: bytes, skip_crc: bool = False) -> Response:
+    def construct(cls, frame: bytes) -> Response:
         """Construct a response object from raw data."""
 
         # Build a memoryview of the frame for zero-copy slicing
         with memoryview(frame) as frame_mv:
-            # Ensure frame is valid before parsing
-            Response.validate(frame_mv, skip_crc)
+            # Validate the frame
+            Frame.validate(frame_mv)
 
-            # Parse frame depending on id
+            # Fetch the appropriate response class from the ID
             response_id = frame_mv[10]
-            payload = frame_mv[10:-2]
             if response_id == ResponseId.STATE:
-                return StateResponse(payload)
+                response_class = StateResponse
             elif response_id == ResponseId.CAPABILITIES:
-                return CapabilitiesResponse(payload)
+                response_class = CapabilitiesResponse
             elif response_id in [ResponseId.PROPERTIES, ResponseId.PROPERTIES_ACK]:
-                return PropertiesResponse(payload)
+                response_class = PropertiesResponse
             else:
-                return Response(payload)
+                response_class = Response
+
+            # Validate the payload CRC
+            # ...except for properties which certain devices send invalid CRCs
+            if response_class != PropertiesResponse:
+                Response.validate(frame_mv[10:-1])
+
+            # Build the response
+            return response_class(frame_mv[10:-2])
 
 
 class CapabilitiesResponse(Response):

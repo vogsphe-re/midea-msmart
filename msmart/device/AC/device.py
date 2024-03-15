@@ -68,8 +68,6 @@ class AirConditioner(Device):
         super().__init__(ip=ip, port=port, device_id=device_id,
                          device_type=DeviceType.AIR_CONDITIONER, **kwargs)
 
-        self._disable_properties_crc_check = False
-
         self._beep_on = False
         self._power_state = False
         self._target_temperature = 17.0
@@ -244,32 +242,12 @@ class AirConditioner(Device):
         # Device is online if we received any response
         self._online = True
 
-        # Determine if CRCs will be checked
-        properties_command = isinstance(command,
-                                        (GetPropertiesCommand, SetPropertiesCommand))
-        skip_crc = self._disable_properties_crc_check and properties_command
-
         valid_responses = []
         for data in responses:
             try:
-                try:
-                    # Construct response from data
-                    response = Response.construct(data, skip_crc=skip_crc)
-                except InvalidResponseException as e:
-                    if not properties_command:
-                        _LOGGER.error(e)
-                        continue
-
-                    # Some devices return invalid CRCs on properties responses
-                    # Detect and disable CRC checks on these responses
-                    _LOGGER.info(
-                        "Disabling CRC check for properties commands.")
-                    self._disable_properties_crc_check = True
-
-                    # Construct the failing response again without CRC check
-                    response = Response.construct(data, skip_crc=True)
-
-            except InvalidFrameException as e:
+                # Construct response from data
+                response = Response.construct(data)
+            except (InvalidFrameException, InvalidResponseException) as e:
                 _LOGGER.error(e)
                 continue
 
