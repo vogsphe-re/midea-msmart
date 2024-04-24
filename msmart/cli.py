@@ -175,11 +175,11 @@ def _run(args) -> NoReturn:
 
 
 def main() -> NoReturn:
-    """Main entry point for msmart-ng command."""
+    """Main entry point for msmart-vog command."""
 
     # Define the main parser to select subcommands
     parser = argparse.ArgumentParser(
-        description="Command line utility for msmart-ng."
+        description="Command line utility for msmart-vog."
     )
     parser.add_argument("-v", "--version",
                         action="version", version=f"msmart version: {__version__}")
