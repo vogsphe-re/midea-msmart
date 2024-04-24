@@ -15,7 +15,7 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: mill1000/msmart-ng
+  IMAGE_NAME: vogsphe-re/msmart-ng
   PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7
 
 jobs:

@@ -29,8 +29,8 @@ dependencies = [
 dynamic = ["version"]
 
 [project.urls]
-Repository = "https://github.com/mill1000/midea-msmart"
-Issues = "https://github.com/mill1000/midea-msmart/issues"
+Repository = "https://github.com/vogsphe-re/midea-msmart"
+Issues = "https://github.com/vogsphe-re/midea-msmart/issues"
 
 [project.scripts]
 midea-discover = "msmart.cli:_legacy_main"
