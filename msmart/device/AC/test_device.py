@@ -1,6 +1,8 @@
 import unittest
+from unittest.mock import patch
 
-from .command import PropertiesResponse, Response, StateResponse
+from .command import (GetPropertiesCommand, GetStateCommand,
+                      PropertiesResponse, PropertyId, Response, StateResponse)
 from .device import AirConditioner as AC
 
 
@@ -118,7 +120,7 @@ class TestUpdateStateFromResponse(unittest.TestCase):
 
         # Create a dummy device and process the response
         device = AC(0, 0, 0)
-        device._process_state_response(resp)
+        device._update_state(resp)
 
         # Assert state is expected
         self.assertEqual(device.target_temperature, 21.0)
@@ -155,7 +157,7 @@ class TestUpdateStateFromResponse(unittest.TestCase):
 
         # Create a dummy device and process the response
         device = AC(0, 0, 0)
-        device._process_state_response(resp)
+        device._update_state(resp)
 
         # Assert state is expected
         # TODO Test cases doesn't test values that differ from defaults
@@ -176,38 +178,74 @@ class TestUpdateStateFromResponse(unittest.TestCase):
 
         # Create a dummy device and process the response
         device = AC(0, 0, 0)
-        device._process_state_response(resp)
+        device._update_state(resp)
 
         # Assert state is expected
         self.assertEqual(device.horizontal_swing_angle, AC.SwingAngle.POS_3)
         self.assertEqual(device.vertical_swing_angle, AC.SwingAngle.OFF)
 
-    def test_properties_missing_field(self) -> None:
-        """Test parsing of PropertiesResponse that only contains some properties."""
-        # https://github.com/mill1000/midea-msmart/issues/97#issuecomment-1949495900
-        TEST_RESPONSE = bytes.fromhex(
-            "aa13ac00000000000303b1010a0000013200c884")
+
+class TestSendCommand(unittest.IsolatedAsyncioTestCase):
+
+    @patch("msmart.device.Device._send_command")
+    async def test_response_ignore_bad_crc(self, mock_send_command) -> None:
+        """Test that bad CRCs are ignored when in response to properties commands."""
+        TEST_RESPONSE_BAD_CRC = bytes.fromhex(
+            "aa14ac00000000000303b10109000001003c000042")
+        TEST_RESPONSE_BAD_CHECKSUM = bytes.fromhex(
+            "aa14ac00000000000303b10109000001003c0000FF")
+
+        # Set return value of mocked method
+        mock_send_command.return_value = [TEST_RESPONSE_BAD_CRC]
 
         # Create a dummy device
         device = AC(0, 0, 0)
 
-        # Set some properties
-        device.horizontal_swing_angle = AC.SwingAngle.POS_5
-        device.vertical_swing_angle = AC.SwingAngle.POS_5
+        # Assert we start not ignoring CRCs
+        self.assertEqual(device._disable_properties_crc_check, False)
 
-        # Construct and assert response
-        resp = Response.construct(TEST_RESPONSE)
-        self.assertIsNotNone(resp)
-        self.assertEqual(type(resp), PropertiesResponse)
+        # Send a properties command
+        command = GetPropertiesCommand([PropertyId.SWING_UD_ANGLE])
+        responses = await device._send_command_get_responses(command)
 
-        # Process response
-        device._process_state_response(resp)
+        # Assert that responses are received
+        self.assertTrue(responses)
 
-        # Assert that only the properties in the response are updated
-        self.assertEqual(device.horizontal_swing_angle, AC.SwingAngle.POS_3)
+        # Assert we start are now ignoring CRCs
+        self.assertEqual(device._disable_properties_crc_check, True)
 
-        # Assert other properties are untouched
-        self.assertEqual(device.vertical_swing_angle, AC.SwingAngle.POS_5)
+        # Check that we still check CRCs on non-properties commands
+        with self.assertLogs("msmart") as log:
+            command = GetStateCommand()
+            responses = await device._send_command_get_responses(command)
+
+            # Assert that no responses received
+            self.assertFalse(responses)
+
+        # Assert that an error was generated
+        self.assertRegex(log.output[0], "^ERROR:.*Payload.*failed CRC")
+
+        # Change mocked return to an invalid frame
+        mock_send_command.return_value = [TEST_RESPONSE_BAD_CHECKSUM]
+
+        # Assert that checksums are always checked regardless of command
+        with self.assertLogs("msmart") as log:
+            command = GetStateCommand()
+            responses = await device._send_command_get_responses(command)
+
+            # Assert that no responses received
+            self.assertFalse(responses)
+
+            # Send a properties command
+            command = GetPropertiesCommand([PropertyId.SWING_UD_ANGLE])
+            responses = await device._send_command_get_responses(command)
+
+            # Assert that no responses received
+            self.assertFalse(responses)
+
+        # Assert that an error was generated
+        self.assertRegex(log.output[0], "^ERROR:.*Frame.*failed checksum")
+        self.assertRegex(log.output[1], "^ERROR:.*Frame.*failed checksum")
 
 
 if __name__ == "__main__":

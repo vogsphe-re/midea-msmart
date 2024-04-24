@@ -19,10 +19,11 @@ class InvalidResponseException(Exception):
 
 
 class ResponseId(IntEnum):
-    STATE = 0xC0
-    CAPABILITIES = 0xB5
     PROPERTIES_ACK = 0xB0  # In response to property commands
     PROPERTIES = 0xB1
+    CAPABILITIES = 0xB5
+    STATE = 0xC0
+    GROUP_DATA = 0xC1
 
 
 class CapabilityId(IntEnum):
@@ -151,6 +152,40 @@ class GetStateCommand(Command):
         ]))
 
 
+class GetPowerUsageCommand(Command):
+    """Command to query power usage from device."""
+
+    def __init__(self) -> None:
+        super().__init__(frame_type=FrameType.QUERY)
+
+    def tobytes(self) -> bytes:  # pyright: ignore[reportIncompatibleMethodOverride] # nopep8
+        payload = bytearray(20)
+
+        payload[0] = 0x41
+        payload[1] = 0x21
+        payload[2] = 0x01
+        payload[3] = 0x44
+
+        return super().tobytes(payload)
+
+
+class GetHumidityCommand(Command):
+    """Command to query indoor humidity from device."""
+
+    def __init__(self) -> None:
+        super().__init__(frame_type=FrameType.QUERY)
+
+    def tobytes(self) -> bytes:  # pyright: ignore[reportIncompatibleMethodOverride] # nopep8
+        payload = bytearray(20)
+
+        payload[0] = 0x41
+        payload[1] = 0x21
+        payload[2] = 0x01
+        payload[3] = 0x45
+
+        return super().tobytes(payload)
+
+
 class SetStateCommand(Command):
     """Command to set basic state of the device."""
 
@@ -169,6 +204,7 @@ class SetStateCommand(Command):
         self.sleep_mode = False
         self.freeze_protection_mode = False
         self.follow_me = False
+        self.target_humidity = 40
 
     def tobytes(self) -> bytes:  # pyright: ignore[reportIncompatibleMethodOverride] # nopep8
         # Build beep and power status bytes
@@ -209,7 +245,10 @@ class SetStateCommand(Command):
         turbo_alt = 0x20 if self.turbo_mode else 0
         follow_me = 0x80 if self.follow_me else 0
 
-        # Build alternate turbo byte
+        # Build target humidity byte
+        humidity = self.target_humidity & 0x7F
+
+        # Build freeze protection byte
         freeze_protect = 0x80 if self.freeze_protection_mode else 0
 
         return super().tobytes(bytes([
@@ -236,8 +275,10 @@ class SetStateCommand(Command):
             0x00, 0x00, 0x00,
             # Alternate temperature
             temperature_alt,
+            # Target humidity
+            humidity,
             # Unknown
-            0x00, 0x00,
+            0x00,
             # Frost/freeze protection
             freeze_protect,
             # Unknown
@@ -335,43 +376,55 @@ class Response():
         return self._payload
 
     @classmethod
-    def validate(cls, payload: memoryview) -> None:
+    def validate(cls, frame: memoryview, skip_crc: bool = False) -> None:
         """Validate a response by checking the frame checksum and payload CRC."""
+
+        # Attempt to validate the frame
+        Frame.validate(frame)
+
+        # Exit early if not checking CRC
+        if skip_crc:
+            return
+
+        # Extract frame payload to validate CRC/checksum
+        payload = frame[10:-1]
 
         # Some devices use a CRC others seem to use a 2nd checksum
         payload_crc = crc8.calculate(payload[0:-1])
         payload_checksum = Frame.checksum(payload[0:-1])
+
         if payload_crc != payload[-1] and payload_checksum != payload[-1]:
             raise InvalidResponseException(
                 f"Payload '{payload.hex()}' failed CRC and checksum. Received: 0x{payload[-1]:X}, Expected: 0x{payload_crc:X} or 0x{payload_checksum:X}.")
 
     @classmethod
-    def construct(cls, frame: bytes) -> Response:
+    def construct(cls, frame: bytes, skip_crc: bool = False) -> Response:
         """Construct a response object from raw data."""
 
         # Build a memoryview of the frame for zero-copy slicing
         with memoryview(frame) as frame_mv:
-            # Validate the frame
-            Frame.validate(frame_mv)
+            # Ensure frame is valid before parsing
+            Response.validate(frame_mv, skip_crc)
 
-            # Fetch the appropriate response class from the ID
+            # Parse frame depending on id
             response_id = frame_mv[10]
+            payload = frame_mv[10:-2]
             if response_id == ResponseId.STATE:
-                response_class = StateResponse
+                return StateResponse(payload)
             elif response_id == ResponseId.CAPABILITIES:
-                response_class = CapabilitiesResponse
+                return CapabilitiesResponse(payload)
             elif response_id in [ResponseId.PROPERTIES, ResponseId.PROPERTIES_ACK]:
-                response_class = PropertiesResponse
-            else:
-                response_class = Response
+                return PropertiesResponse(payload)
+            elif response_id == ResponseId.GROUP_DATA:
+                # Response type depends on an additional "group" byte
+                group = payload[3] & 0xF
+                if group == 4:
+                    return PowerUsageResponse(payload)
+                elif group == 5:
+                    return HumidityResponse(payload)
 
-            # Validate the payload CRC
-            # ...except for properties which certain devices send invalid CRCs
-            if response_class != PropertiesResponse:
-                Response.validate(frame_mv[10:-1])
-
-            # Build the response
-            return response_class(frame_mv[10:-2])
+            # Fallback to base response class
+            return Response(payload)
 
 
 class CapabilitiesResponse(Response):
@@ -614,11 +667,13 @@ class CapabilitiesResponse(Response):
 
     @property
     def eco_mode(self) -> bool:
-        return self._capabilities.get("eco_mode", False) or self._capabilities.get("eco_mode_2", False)
+        return (self._capabilities.get("eco_mode", False)
+                or self._capabilities.get("eco_mode_2", False))
 
     @property
     def turbo_mode(self) -> bool:
-        return self._capabilities.get("turbo_heat", False) or self._capabilities.get("turbo_cool", False)
+        return (self._capabilities.get("turbo_heat", False)
+                or self._capabilities.get("turbo_cool", False))
 
     @property
     def freeze_protection_mode(self) -> bool:
@@ -643,6 +698,20 @@ class CapabilitiesResponse(Response):
         mode = ["cool", "auto", "heat"]
         return max([self._capabilities.get(f"{m}_max_temperature", 30) for m in mode])
 
+    @property
+    def power_stats(self) -> bool:
+        return self._capabilities.get("power_stats", False)
+
+    @property
+    def power_bcd(self) -> bool:
+        return self._capabilities.get("power_bcd", False)
+
+    @property
+    def humidity(self) -> bool:
+        # TODO Unsure the difference between these two
+        return (self._capabilities.get("humidity_auto_set", False)
+                or self._capabilities.get("humidity_manual_set", False))
+
 
 class StateResponse(Response):
     """Response to state query."""
@@ -665,6 +734,7 @@ class StateResponse(Response):
         self.display_on = None
         self.freeze_protection_mode = None
         self.follow_me = None
+        self.target_humidity = None
 
         _LOGGER.debug("State response payload: %s", payload.hex())
 
@@ -753,10 +823,13 @@ class StateResponse(Response):
         if self.outdoor_temperature:
             self.outdoor_temperature += (payload[15] >> 4) / 10
 
-        # TODO dudanov/MideaUART humidity set point in byte 19, mask 0x7F
-
         # TODO Some payloads are shorter than expected. Unsure what, when or why
-        # This length was picked arbitrarily from one user's shorter payload
+        # The lengths below were picked arbitrarily from user payload data
+        if len(payload) < 20:
+            return
+
+        self.target_humidity = payload[19] & 0x7F
+
         if len(payload) < 22:
             return
 
@@ -851,3 +924,52 @@ class PropertiesResponse(Response):
     @property
     def swing_vertical_angle(self) -> Optional[int]:
         return self._properties.get(PropertyId.SWING_UD_ANGLE, None)
+
+
+class PowerUsageResponse(Response):
+    """Response to a GetPowerUsageCommand."""
+
+    def __init__(self, payload: memoryview) -> None:
+        super().__init__(payload)
+
+        self.power = None
+        self.power_bcd = None
+
+        _LOGGER.debug("Power response payload: %s", payload.hex())
+
+        self._parse(payload)
+
+    def _parse(self, payload: memoryview) -> None:
+        # Response is technically a "group data 4" response
+        # and may contain other interesting data
+
+        def decode_bcd(d: int) -> int:
+            return 10 * (d >> 4) + (d & 0xF)
+
+        # TODO More power data in this payload?
+
+        # Either interpretation may be valid depending on device
+        self.power = (payload[16] << 16 | payload[17] << 8 | payload[18]) / 10
+
+        self.power_bcd = (1000 * decode_bcd(payload[16]) +
+                          10 * decode_bcd(payload[17]) +
+                          decode_bcd(payload[18]) / 10)
+
+
+class HumidityResponse(Response):
+    """Response to a GetHumidityCommand."""
+
+    def __init__(self, payload: memoryview) -> None:
+        super().__init__(payload)
+
+        self.humidity = None
+
+        _LOGGER.debug("Humidity response payload: %s", payload.hex())
+
+        self._parse(payload)
+
+    def _parse(self, payload: memoryview) -> None:
+        # Response is technically a "group data 5" response
+        # and may contain other interesting data
+
+        self.humidity = payload[4]

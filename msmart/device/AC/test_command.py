@@ -1,8 +1,8 @@
 import unittest
-from typing import Union, cast
+from typing import cast
 
 from msmart.const import DeviceType, FrameType
-from msmart.frame import Frame, InvalidFrameException
+from msmart.frame import Frame
 
 from .command import (CapabilitiesResponse, CapabilityId, Command,
                       GetPropertiesCommand, GetStateCommand,
@@ -18,7 +18,7 @@ class _TestResponseBase(unittest.TestCase):
         self.assertTrue(hasattr(obj, attr),
                         msg=f"Object {obj} lacks attribute '{attr}'.")
 
-    def _test_build_response(self, msg) -> Union[StateResponse, CapabilitiesResponse, PropertiesResponse, Response]:
+    def _test_build_response(self, msg) -> Response:
         """Build a response from the frame and assert it exists."""
         resp = Response.construct(msg)
         self.assertIsNotNone(resp)
@@ -657,37 +657,31 @@ class TestPropertiesResponse(_TestResponseBase):
         # Check state
         self.assertEqual(resp.swing_horizontal_angle, 50)
 
-
-class TestResponseConstruct(_TestResponseBase):
-    """Test construction of responses from raw data."""
-
-    def test_invalid_checksum(self) -> None:
-        """Test that invalid checksums raise exceptions."""
-        TEST_RESPONSE_BAD_CHECKSUM = bytes.fromhex(
-            "aa14ac00000000000303b10109000001003c0000FF")
-
-        with self.assertRaises(InvalidFrameException):
-            Response.construct(TEST_RESPONSE_BAD_CHECKSUM)
-
     def test_properties_response_invalid_crc(self) -> None:
-        """Test that PropertiesResponses with invalid CRCs are accepted."""
-        # PropertiesResponse with invalid CRC
+        """Test we decode a properties response sent with an invalid CRC correctly."""
         # https://github.com/mill1000/midea-ac-py/issues/101#issuecomment-1994824924
-        TEST_RESPONSE_PROPERTIES_BAD_CRC = bytes.fromhex(
+        TEST_RESPONSE = bytes.fromhex(
             "aa14ac00000000000303b10109000001003c000042")
-        # Mocked up StateResponse with invalid CRC
-        TEST_RESPONSE_STATE_BAD_CRC = bytes.fromhex(
-            "aa22ac00000000000303c0014566000000300010045eff00000000000000000069aa0c")
 
-        # Assert that constructing a StateResponse with invalid CRC raises an exception
+        # Assert that constructing with CRC checks results in an exception
         with self.assertRaises(InvalidResponseException):
-            resp = Response.construct(TEST_RESPONSE_STATE_BAD_CRC)
+            resp = Response.construct(TEST_RESPONSE, skip_crc=False)
 
-        # Now construct a PropertiesResponse with an invalid CRC
-        resp = Response.construct(TEST_RESPONSE_PROPERTIES_BAD_CRC)
+        # Create response without checking CRC and assert it's expected type
+        resp = Response.construct(TEST_RESPONSE, skip_crc=True)
 
         self.assertIsNotNone(resp)
         self.assertEqual(type(resp), PropertiesResponse)
+        resp = cast(PropertiesResponse, resp)
+
+        EXPECTED_RAW_PROPERTIES = {
+            PropertyId.SWING_UD_ANGLE: 0,
+        }
+        # Ensure raw decoded properties match
+        self.assertEqual(resp._properties, EXPECTED_RAW_PROPERTIES)
+
+        # Check state
+        self.assertEqual(resp.swing_vertical_angle, 0)
 
 
 if __name__ == "__main__":
