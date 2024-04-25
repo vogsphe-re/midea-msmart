@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "msmart-vog"
-description = "A Python library for local control of Midea (and associated brands) smart air conditioners."
+description = "A Python library for local control of Midea (and associated brands) smart air conditioners. !! THIS IS A DEVELOPMENT PROJECT !! For the original, please refer to https://github.com/mill1000/midea-msmart"
 readme = "README.md"
 authors = [
-  {name = "Tucker Kern", email = "tuckkern@gmail.com"},
+  {name = "Stephen Davis", email = "sdavis@nativeit.net"},
 ]
 requires-python = ">=3.8"
 license = {text = "MIT"}
