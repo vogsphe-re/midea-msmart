@@ -187,7 +187,7 @@ class TestUpdateStateFromResponse(unittest.TestCase):
 
 class TestSendCommand(unittest.IsolatedAsyncioTestCase):
 
-    @patch("msmart-vog.device.Device._send_command")
+    @patch("msmart_vog.device.Device._send_command")
     async def test_response_ignore_bad_crc(self, mock_send_command) -> None:
         """Test that bad CRCs are ignored when in response to properties commands."""
         TEST_RESPONSE_BAD_CRC = bytes.fromhex(

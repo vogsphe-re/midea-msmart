@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  CONTAINER_NAME: msmart-vog
+  CONTAINER_NAME: msmart_vog
 
 jobs:
   prune-pr-images:
