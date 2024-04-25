@@ -1,10 +1,10 @@
-# msmart-ng
+# msmart-vog
 A Python library for local control of Midea (and associated brands) smart air conditioners.
 
 ## !!! THIS IS A DEVELOPMENT FORK. DO NOT USE !!!
 
 [![Code Quality Checks](https://github.com/mill1000/midea-msmart/actions/workflows/checks.yml/badge.svg)](https://github.com/mill1000/midea-msmart/actions/workflows/checks.yml)
-[![PyPI](https://img.shields.io/pypi/v/msmart-ng?logo=PYPI)](https://pypi.org/project/msmart-ng/)
+[![PyPI](https://img.shields.io/pypi/v/msmart-vog?logo=PYPI)](https://pypi.org/project/msmart-vog/)
 
 If a devices uses one of the following apps it is likely supported:
 * Artic King (com.arcticking.ac)
@@ -61,11 +61,11 @@ Some external dependencies have been replaced with standard Python modules.
 - Naming conventions follow PEP8.
 
 ## Installing
-Use pip, remove the old `msmart` package if necessary, and install this fork `msmart-ng`.
+Use pip, remove the old `msmart` package if necessary, and install this fork `msmart-vog`.
 
 ```shell
 pip uninstall msmart
-pip install msmart-ng
+pip install msmart-vog
 ```
 
 ## Usage
@@ -73,10 +73,10 @@ pip install msmart-ng
 A simple command line interface is provided to discover and query devices. 
 
 ```shell
-$ msmart-ng --help
-usage: msmart-ng [-h] [-v] {discover,query} ...
+$ msmart-vog --help
+usage: msmart-vog [-h] [-v] {discover,query} ...
 
-Command line utility for msmart-ng.
+Command line utility for msmart-vog.
 
 options:
   -h, --help        show this help message and exit
@@ -86,13 +86,13 @@ Command:
   {discover,query}
 ```
 
-Each subcommand has additional help available. e.g. `msmart-ng discover --help`
+Each subcommand has additional help available. e.g. `msmart-vog discover --help`
 
 #### Discover
-Discover all devices on the LAN with the `msmart-ng discover` subcommand. 
+Discover all devices on the LAN with the `msmart-vog discover` subcommand. 
 
 ```shell
-$ msmart-ng discover
+$ msmart-vog discover
 INFO:msmart_vog.cli:Discovering all devices on local network.
 ...
 INFO:msmart_vog.cli:Found 2 devices.
@@ -113,15 +113,15 @@ Users with V1 devices will see the following error:
 ERROR:msmart_vog.discover:V1 device not supported yet.
 ```
 
-I don't have any V1 devices to test with so please create an issue with the output of `msmart-ng discover --debug`.
+I don't have any V1 devices to test with so please create an issue with the output of `msmart-vog discover --debug`.
 
 #### Query
-Query device state and capabilities with the `msmart-ng query` subcommand.
+Query device state and capabilities with the `msmart-vog query` subcommand.
 
 **Note:** Version 3 devices need to specify either the `--auto` argument or the `--token`, `--key` and `--id` arguments to make a connection.
 
 ```shell
-$ msmart-ng query <HOST>
+$ msmart-vog query <HOST>
 
 ```
 
@@ -134,13 +134,13 @@ Use [this fork](https://github.com/mill1000/midea-ac-py) of midea-ac-py to contr
 See the included [example](example.py) for controlling devices from a script.
 
 ## Docker
-A docker image is available on ghcr.io at `ghcr.io/mill1000/msmart-ng`. The container should be run with `--network=host` to allow broadcast packets to reach devices on the local network. Additional arguments to the container are passed to the `msmart-ng` CLI.
+A docker image is available on ghcr.io at `ghcr.io/mill1000/msmart-vog`. The container should be run with `--network=host` to allow broadcast packets to reach devices on the local network. Additional arguments to the container are passed to the `msmart-vog` CLI.
 
 ```shell
-$ docker run --network=host ghcr.io/mill1000/msmart-ng:latest --help
-usage: msmart-ng [-h] [-v] {discover,query} ...
+$ docker run --network=host ghcr.io/mill1000/msmart-vog:latest --help
+usage: msmart-vog [-h] [-v] {discover,query} ...
 
-Command line utility for msmart-ng.
+Command line utility for msmart-vog.
 
 options:
   -h, --help        show this help message and exit
