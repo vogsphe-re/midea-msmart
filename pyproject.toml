@@ -34,7 +34,7 @@ Issues = "https://github.com/vogsphe-re/midea-msmart/issues"
 
 [project.scripts]
 midea-discover = "msmart_vog.cli:_legacy_main"
-msmart-vog = "msmart-vog.cli:main"
+msmart-vog = "msmart_vog.cli:main"
 
 [tool.setuptools]
 include-package-data = false
