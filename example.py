@@ -1,8 +1,8 @@
 import asyncio
 import logging
 
-from msmart_vog.device import AirConditioner as AC
-from msmart_vog.discover import Discover
+from msmart-vog.device import AirConditioner as AC
+from msmart-vog.discover import Discover
 
 logging.basicConfig(level=logging.INFO)
 

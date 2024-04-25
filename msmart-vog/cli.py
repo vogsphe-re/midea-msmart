@@ -3,12 +3,12 @@ import asyncio
 import logging
 from typing import NoReturn
 
-from msmart_vog import __version__
-from msmart_vog.cloud import Cloud, CloudError
-from msmart_vog.const import OPEN_MIDEA_APP_ACCOUNT, OPEN_MIDEA_APP_PASSWORD
-from msmart_vog.device import AirConditioner as AC
-from msmart_vog.discover import Discover
-from msmart_vog.lan import AuthenticationError
+from msmart-vog import __version__
+from msmart-vog.cloud import Cloud, CloudError
+from msmart-vog.const import OPEN_MIDEA_APP_ACCOUNT, OPEN_MIDEA_APP_PASSWORD
+from msmart-vog.device import AirConditioner as AC
+from msmart-vog.discover import Discover
+from msmart-vog.lan import AuthenticationError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -175,11 +175,11 @@ def _run(args) -> NoReturn:
 
 
 def main() -> NoReturn:
-    """Main entry point for msmart_vog command."""
+    """Main entry point for msmart-vog command."""
 
     # Define the main parser to select subcommands
     parser = argparse.ArgumentParser(
-        description="Command line utility for msmart_vog."
+        description="Command line utility for msmart-vog."
     )
     parser.add_argument("-v", "--version",
                         action="version", version=f"msmart version: {__version__}")
