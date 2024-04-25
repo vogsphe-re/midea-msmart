@@ -23,7 +23,7 @@ See [usage](#usage) to determine if a device is supported.
 The device, LAN and cloud classes have all been rewritten to support async/await syntax.
 
 ```python
-from msmart.device import AirConditioner as AC
+from msmart-vog.device import AirConditioner as AC
 
 # Build device
 device = AC(ip=DEVICE_IP, port=6444, device_id=int(DEVICE_ID))
@@ -41,7 +41,7 @@ A new discovery module can discover and return ready-to-use device objects from 
 __Note: V3 devices are automatically authenticated via the Midea cloud.__
 
 ```python
-from msmart.discover import Discover
+from msmart-vog.discover import Discover
 
 # Discover all devices on the network
 devices = await Discover.discover()
@@ -93,12 +93,12 @@ Discover all devices on the LAN with the `msmart-ng discover` subcommand.
 
 ```shell
 $ msmart-ng discover
-INFO:msmart.cli:Discovering all devices on local network.
+INFO:msmart-vog.cli:Discovering all devices on local network.
 ...
-INFO:msmart.cli:Found 2 devices.
-INFO:msmart.cli:Found device:
+INFO:msmart-vog.cli:Found 2 devices.
+INFO:msmart-vog.cli:Found device:
 {'ip': '10.100.1.140', 'port': 6444, 'id': 15393162840672, 'online': True, 'supported': True, 'type': <DeviceType.AIR_CONDITIONER: 172>, 'name': 'net_ac_F7B4', 'sn': '000000P0000000Q1F0C9D153F7B40000', 'key': None, 'token': None}
-INFO:msmart.cli:Found device:
+INFO:msmart-vog.cli:Found device:
 {'ip': '10.100.1.239', 'port': 6444, 'id': 147334558165565, 'online': True, 'supported': True, 'type': <DeviceType.AIR_CONDITIONER: 172>, 'name': 'net_ac_63BA', 'sn': '000000P0000000Q1B88C29C963BA0000', 'key': '3a13f53f335042f9ae5fd266a6bd779459ed7ee7e09842f1a0e03c024890fc96', 'token': '56a72747cef14d55e17e69b46cd98deae80607e318a7b55cb86bb98974501034c657e39e4a4032e3c8cc9a3cab00fd3ec0bab4a816a57f68b8038977406b7431'}
 ```
 
@@ -110,7 +110,7 @@ Save the device ID, IP address, and port. Version 3 devices will also require th
 Users with V1 devices will see the following error:
 
 ```
-ERROR:msmart.discover:V1 device not supported yet.
+ERROR:msmart-vog.discover:V1 device not supported yet.
 ```
 
 I don't have any V1 devices to test with so please create an issue with the output of `msmart-ng discover --debug`.

@@ -33,15 +33,15 @@ Repository = "https://github.com/vogsphe-re/midea-msmart"
 Issues = "https://github.com/vogsphe-re/midea-msmart/issues"
 
 [project.scripts]
-midea-discover = "msmart.cli:_legacy_main"
-msmart-vog = "msmart.cli:main"
+midea-discover = "msmart-vog.cli:_legacy_main"
+msmart-vog = "msmart-vog.cli:main"
 
 [tool.setuptools]
 include-package-data = false
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["msmart", "msmart.*"]
-exclude = ["msmart.tests"]
+include = ["msmart", "msmart-vog.*"]
+exclude = ["msmart-vog.tests"]
 
 [tool.setuptools_scm]

@@ -13,7 +13,7 @@ import httpx
 from Crypto.Cipher import AES
 from Crypto.Util import Padding
 
-from msmart.const import DeviceType
+from msmart-vog.const import DeviceType
 
 _LOGGER = logging.getLogger(__name__)
 
