@@ -33,7 +33,7 @@ Repository = "https://github.com/vogsphe-re/midea-msmart"
 Issues = "https://github.com/vogsphe-re/midea-msmart/issues"
 
 [project.scripts]
-midea-discover = "msmart-vog.cli:_legacy_main"
+midea-discover = "msmart_vog.cli:_legacy_main"
 msmart-vog = "msmart-vog.cli:main"
 
 [tool.setuptools]
