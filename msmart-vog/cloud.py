@@ -13,7 +13,7 @@ import httpx
 from Crypto.Cipher import AES
 from Crypto.Util import Padding
 
-from msmartvog.const import DeviceType
+from vogmidea.const import DeviceType
 
 _LOGGER = logging.getLogger(__name__)
 

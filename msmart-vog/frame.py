@@ -1,6 +1,6 @@
 from typing import Union
 
-from msmartvog.const import DeviceType, FrameType
+from vogmidea.const import DeviceType, FrameType
 
 
 class InvalidFrameException(Exception):

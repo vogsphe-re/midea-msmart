@@ -1,8 +1,8 @@
 import unittest
 from typing import cast
 
-from msmartvog.const import DeviceType, FrameType
-from msmartvog.frame import Frame
+from vogmidea.const import DeviceType, FrameType
+from vogmidea.frame import Frame
 
 from .command import (CapabilitiesResponse, CapabilityId, Command,
                       GetPropertiesCommand, GetStateCommand,

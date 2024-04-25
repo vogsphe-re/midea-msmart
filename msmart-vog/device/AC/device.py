@@ -3,10 +3,10 @@ from __future__ import annotations
 import logging
 from typing import Any, List, Optional, Union, cast
 
-from msmartvog.base_device import Device
-from msmartvog.const import DeviceType
-from msmartvog.frame import InvalidFrameException
-from msmartvog.utils import MideaIntEnum
+from vogmidea.base_device import Device
+from vogmidea.const import DeviceType
+from vogmidea.frame import InvalidFrameException
+from vogmidea.utils import MideaIntEnum
 
 from .command import (CapabilitiesResponse, GetCapabilitiesCommand,
                       GetHumidityCommand, GetPowerUsageCommand,

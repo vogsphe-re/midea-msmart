@@ -7,9 +7,9 @@ from collections import namedtuple
 from enum import IntEnum
 from typing import Callable, Collection, Mapping, Optional, Union
 
-import msmartvog.crc8 as crc8
-from msmartvog.const import DeviceType, FrameType
-from msmartvog.frame import Frame
+import vogmidea.crc8 as crc8
+from vogmidea.const import DeviceType, FrameType
+from vogmidea.frame import Frame
 
 _LOGGER = logging.getLogger(__name__)
 

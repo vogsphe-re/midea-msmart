@@ -1,10 +1,10 @@
-# msmartvog
+# vogmidea
 A Python library for local control of Midea (and associated brands) smart air conditioners.
 
 ## !!! THIS IS A DEVELOPMENT FORK. DO NOT USE !!!
 
 [![Code Quality Checks](https://github.com/mill1000/midea-msmart/actions/workflows/checks.yml/badge.svg)](https://github.com/mill1000/midea-msmart/actions/workflows/checks.yml)
-[![PyPI](https://img.shields.io/pypi/v/msmartvog?logo=PYPI)](https://pypi.org/project/msmartvog/)
+[![PyPI](https://img.shields.io/pypi/v/vogmidea?logo=PYPI)](https://pypi.org/project/vogmidea/)
 
 If a devices uses one of the following apps it is likely supported:
 * Artic King (com.arcticking.ac)
@@ -23,7 +23,7 @@ See [usage](#usage) to determine if a device is supported.
 The device, LAN and cloud classes have all been rewritten to support async/await syntax.
 
 ```python
-from msmartvog.device import AirConditioner as AC
+from vogmidea.device import AirConditioner as AC
 
 # Build device
 device = AC(ip=DEVICE_IP, port=6444, device_id=int(DEVICE_ID))
@@ -41,7 +41,7 @@ A new discovery module can discover and return ready-to-use device objects from 
 __Note: V3 devices are automatically authenticated via the Midea cloud.__
 
 ```python
-from msmartvog.discover import Discover
+from vogmidea.discover import Discover
 
 # Discover all devices on the network
 devices = await Discover.discover()
@@ -61,11 +61,11 @@ Some external dependencies have been replaced with standard Python modules.
 - Naming conventions follow PEP8.
 
 ## Installing
-Use pip, remove the old `msmart` package if necessary, and install this fork `msmartvog`.
+Use pip, remove the old `msmart` package if necessary, and install this fork `vogmidea`.
 
 ```shell
 pip uninstall msmart
-pip install msmartvog
+pip install vogmidea
 ```
 
 ## Usage
@@ -73,10 +73,10 @@ pip install msmartvog
 A simple command line interface is provided to discover and query devices. 
 
 ```shell
-$ msmartvog --help
-usage: msmartvog [-h] [-v] {discover,query} ...
+$ vogmidea --help
+usage: vogmidea [-h] [-v] {discover,query} ...
 
-Command line utility for msmartvog.
+Command line utility for vogmidea.
 
 options:
   -h, --help        show this help message and exit
@@ -86,19 +86,19 @@ Command:
   {discover,query}
 ```
 
-Each subcommand has additional help available. e.g. `msmartvog discover --help`
+Each subcommand has additional help available. e.g. `vogmidea discover --help`
 
 #### Discover
-Discover all devices on the LAN with the `msmartvog discover` subcommand. 
+Discover all devices on the LAN with the `vogmidea discover` subcommand. 
 
 ```shell
-$ msmartvog discover
-INFO:msmartvog.cli:Discovering all devices on local network.
+$ vogmidea discover
+INFO:vogmidea.cli:Discovering all devices on local network.
 ...
-INFO:msmartvog.cli:Found 2 devices.
-INFO:msmartvog.cli:Found device:
+INFO:vogmidea.cli:Found 2 devices.
+INFO:vogmidea.cli:Found device:
 {'ip': '10.100.1.140', 'port': 6444, 'id': 15393162840672, 'online': True, 'supported': True, 'type': <DeviceType.AIR_CONDITIONER: 172>, 'name': 'net_ac_F7B4', 'sn': '000000P0000000Q1F0C9D153F7B40000', 'key': None, 'token': None}
-INFO:msmartvog.cli:Found device:
+INFO:vogmidea.cli:Found device:
 {'ip': '10.100.1.239', 'port': 6444, 'id': 147334558165565, 'online': True, 'supported': True, 'type': <DeviceType.AIR_CONDITIONER: 172>, 'name': 'net_ac_63BA', 'sn': '000000P0000000Q1B88C29C963BA0000', 'key': '3a13f53f335042f9ae5fd266a6bd779459ed7ee7e09842f1a0e03c024890fc96', 'token': '56a72747cef14d55e17e69b46cd98deae80607e318a7b55cb86bb98974501034c657e39e4a4032e3c8cc9a3cab00fd3ec0bab4a816a57f68b8038977406b7431'}
 ```
 
@@ -110,18 +110,18 @@ Save the device ID, IP address, and port. Version 3 devices will also require th
 Users with V1 devices will see the following error:
 
 ```
-ERROR:msmartvog.discover:V1 device not supported yet.
+ERROR:vogmidea.discover:V1 device not supported yet.
 ```
 
-I don't have any V1 devices to test with so please create an issue with the output of `msmartvog discover --debug`.
+I don't have any V1 devices to test with so please create an issue with the output of `vogmidea discover --debug`.
 
 #### Query
-Query device state and capabilities with the `msmartvog query` subcommand.
+Query device state and capabilities with the `vogmidea query` subcommand.
 
 **Note:** Version 3 devices need to specify either the `--auto` argument or the `--token`, `--key` and `--id` arguments to make a connection.
 
 ```shell
-$ msmartvog query <HOST>
+$ vogmidea query <HOST>
 
 ```
 
@@ -134,13 +134,13 @@ Use [this fork](https://github.com/mill1000/midea-ac-py) of midea-ac-py to contr
 See the included [example](example.py) for controlling devices from a script.
 
 ## Docker
-A docker image is available on ghcr.io at `ghcr.io/mill1000/msmartvog`. The container should be run with `--network=host` to allow broadcast packets to reach devices on the local network. Additional arguments to the container are passed to the `msmartvog` CLI.
+A docker image is available on ghcr.io at `ghcr.io/mill1000/vogmidea`. The container should be run with `--network=host` to allow broadcast packets to reach devices on the local network. Additional arguments to the container are passed to the `vogmidea` CLI.
 
 ```shell
-$ docker run --network=host ghcr.io/mill1000/msmartvog:latest --help
-usage: msmartvog [-h] [-v] {discover,query} ...
+$ docker run --network=host ghcr.io/mill1000/vogmidea:latest --help
+usage: vogmidea [-h] [-v] {discover,query} ...
 
-Command line utility for msmartvog.
+Command line utility for vogmidea.
 
 options:
   -h, --help        show this help message and exit

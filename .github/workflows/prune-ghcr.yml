@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  CONTAINER_NAME: msmartvog
+  CONTAINER_NAME: vogmidea
 
 jobs:
   prune-pr-images:

@@ -1,7 +1,7 @@
 import unittest
 
-from msmartvog.cloud import ApiError, Cloud, CloudError
-from msmartvog.const import OPEN_MIDEA_APP_ACCOUNT, OPEN_MIDEA_APP_PASSWORD
+from vogmidea.cloud import ApiError, Cloud, CloudError
+from vogmidea.const import OPEN_MIDEA_APP_ACCOUNT, OPEN_MIDEA_APP_PASSWORD
 
 
 class TestCloud(unittest.IsolatedAsyncioTestCase):
