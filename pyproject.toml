@@ -41,7 +41,7 @@ include-package-data = false
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["msmart", "msmart-vog.*"]
+include = ["msmart-vog", "msmart-vog.*"]
 exclude = ["msmart-vog.tests"]
 
 [tool.setuptools_scm]
