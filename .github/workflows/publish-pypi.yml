@@ -27,7 +27,6 @@ jobs:
   publish-package:
     needs: build-package
     runs-on: ubuntu-latest
-    permissions: write
     steps:
       - uses: actions/download-artifact@v3
         with:
@@ -35,6 +34,6 @@ jobs:
           path: dist
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          # repository-url: https://test.pypi.org/legacy/
+          repository-url: https://test.pypi.org/legacy/
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
