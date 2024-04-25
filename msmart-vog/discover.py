@@ -6,12 +6,12 @@ import socket
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Optional, Type, cast
 
-from msmart-vog.cloud import Cloud, CloudError
-from msmart-vog.const import (DEVICE_INFO_MSG, DISCOVERY_MSG,
+from msmart_vog.cloud import Cloud, CloudError
+from msmart_vog.const import (DEVICE_INFO_MSG, DISCOVERY_MSG,
                           OPEN_MIDEA_APP_ACCOUNT, OPEN_MIDEA_APP_PASSWORD,
                           DeviceType)
-from msmart-vog.device import AirConditioner, Device
-from msmart-vog.lan import AuthenticationError, Security
+from msmart_vog.device import AirConditioner, Device
+from msmart_vog.lan import AuthenticationError, Security
 
 _LOGGER = logging.getLogger(__name__)
 

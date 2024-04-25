@@ -23,7 +23,7 @@ See [usage](#usage) to determine if a device is supported.
 The device, LAN and cloud classes have all been rewritten to support async/await syntax.
 
 ```python
-from msmart-vog.device import AirConditioner as AC
+from msmart_vog.device import AirConditioner as AC
 
 # Build device
 device = AC(ip=DEVICE_IP, port=6444, device_id=int(DEVICE_ID))
@@ -41,7 +41,7 @@ A new discovery module can discover and return ready-to-use device objects from 
 __Note: V3 devices are automatically authenticated via the Midea cloud.__
 
 ```python
-from msmart-vog.discover import Discover
+from msmart_vog.discover import Discover
 
 # Discover all devices on the network
 devices = await Discover.discover()

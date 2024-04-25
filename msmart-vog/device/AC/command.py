@@ -8,8 +8,8 @@ from enum import IntEnum
 from typing import Callable, Collection, Mapping, Optional, Union
 
 import msmart-vog.crc8 as crc8
-from msmart-vog.const import DeviceType, FrameType
-from msmart-vog.frame import Frame
+from msmart_vog.const import DeviceType, FrameType
+from msmart_vog.frame import Frame
 
 _LOGGER = logging.getLogger(__name__)
 

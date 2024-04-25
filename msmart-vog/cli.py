@@ -3,12 +3,12 @@ import asyncio
 import logging
 from typing import NoReturn
 
-from msmart-vog import __version__
-from msmart-vog.cloud import Cloud, CloudError
-from msmart-vog.const import OPEN_MIDEA_APP_ACCOUNT, OPEN_MIDEA_APP_PASSWORD
-from msmart-vog.device import AirConditioner as AC
-from msmart-vog.discover import Discover
-from msmart-vog.lan import AuthenticationError
+from msmart_vog import __version__
+from msmart_vog.cloud import Cloud, CloudError
+from msmart_vog.const import OPEN_MIDEA_APP_ACCOUNT, OPEN_MIDEA_APP_PASSWORD
+from msmart_vog.device import AirConditioner as AC
+from msmart_vog.discover import Discover
+from msmart_vog.lan import AuthenticationError
 
 _LOGGER = logging.getLogger(__name__)
 
