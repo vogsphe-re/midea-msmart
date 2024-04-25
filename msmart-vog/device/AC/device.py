@@ -108,9 +108,9 @@ class AirConditioner(Device):
         self._indoor_temperature = None
         self._outdoor_temperature = None
 
-        self._supports_humidity = False
+        self._supports_humidity = True
         self._indoor_humidity = None
-
+        
         self._supports_power_usage = False
         self._power_usage_bcd = False
         self._power_usage = None
@@ -626,6 +626,10 @@ class AirConditioner(Device):
         return self._outdoor_temperature
 
     @property
+    def indoor_humidity(self) -> Optional[float]:
+        return self._indoor_humidity
+
+    @property
     def supports_display_control(self) -> Optional[bool]:
         return self._supports_display_control
 
@@ -658,6 +662,7 @@ class AirConditioner(Device):
             "target_temperature": self.target_temperature,
             "indoor_temperature": self.indoor_temperature,
             "outdoor_temperature": self.outdoor_temperature,
+            "indoor_humidity": self.indoor_humidity,
             "eco": self.eco_mode,
             "turbo": self.turbo_mode,
             "freeze_protection": self.freeze_protection_mode,
