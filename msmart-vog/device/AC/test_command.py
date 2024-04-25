@@ -1,8 +1,8 @@
 import unittest
 from typing import cast
 
-from msmart_vog.const import DeviceType, FrameType
-from msmart_vog.frame import Frame
+from msmartvog.const import DeviceType, FrameType
+from msmartvog.frame import Frame
 
 from .command import (CapabilitiesResponse, CapabilityId, Command,
                       GetPropertiesCommand, GetStateCommand,

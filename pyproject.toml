@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0.0", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "msmart-vog"
+name = "msmartvog"
 description = "A Python library for local control of Midea (and associated brands) smart air conditioners. !! THIS IS A DEVELOPMENT PROJECT !! For the original, please refer to https://github.com/mill1000/midea-msmart"
 readme = "README.md"
 authors = [
@@ -33,15 +33,15 @@ Repository = "https://github.com/vogsphe-re/midea-msmart"
 Issues = "https://github.com/vogsphe-re/midea-msmart/issues"
 
 [project.scripts]
-midea-discover = "msmart_vog.cli:_legacy_main"
-msmart-vog = "msmart_vog.cli:main"
+midea-discover = "msmartvog.cli:_legacy_main"
+msmartvog = "msmartvog.cli:main"
 
 [tool.setuptools]
 include-package-data = false
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["msmart-vog", "msmart-vog.*"]
-exclude = ["msmart-vog.tests"]
+include = ["msmartvog", "msmartvog.*"]
+exclude = ["msmartvog.tests"]
 
 [tool.setuptools_scm]

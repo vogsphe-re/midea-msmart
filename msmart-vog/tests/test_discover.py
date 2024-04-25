@@ -1,8 +1,8 @@
 import unittest
 
-from msmart_vog.const import DeviceType
-from msmart_vog.device import AirConditioner as AC
-from msmart_vog.discover import Discover
+from msmartvog.const import DeviceType
+from msmartvog.device import AirConditioner as AC
+from msmartvog.discover import Discover
 
 
 class TestDiscover(unittest.IsolatedAsyncioTestCase):

@@ -2,9 +2,9 @@ import logging
 import time
 from typing import List, Optional
 
-from msmart_vog.const import DeviceType
-from msmart_vog.frame import Frame
-from msmart_vog.lan import LAN, AuthenticationError, Key, ProtocolError, Token
+from msmartvog.const import DeviceType
+from msmartvog.frame import Frame
+from msmartvog.lan import LAN, AuthenticationError, Key, ProtocolError, Token
 
 _LOGGER = logging.getLogger(__name__)
 
