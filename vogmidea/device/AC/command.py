@@ -730,6 +730,7 @@ class StateResponse(Response):
         self.fahrenheit = None
         self.indoor_temperature = None
         self.outdoor_temperature = None
+        self.indoor_humidity = None
         self.filter_alert = None
         self.display_on = None
         self.freeze_protection_mode = None
